@@ -34,11 +34,11 @@ const OP_NAMES = {
     10008: '偷菜',
 };
 
-// 配置: 是否只在有经验时才帮助好友
-const HELP_ONLY_WITH_EXP = true;
+// 配置: 是否只在有经验时才帮助好友  
+const HELP_ONLY_WITH_EXP = true; // !!!无效，暂时无法判断。有修复方法但是暂时没打算更新出来
 
 // 配置: 是否启用放虫放草功能
-const ENABLE_PUT_BAD_THINGS = false;  // 暂时关闭放虫放草功能
+const ENABLE_PUT_BAD_THINGS = false;  // 无效！！！开启后会多次访问朋友导致被拉黑 请勿更改暂时关闭放虫放草功能
 
 // ============ 好友 API ============
 
