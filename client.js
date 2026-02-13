@@ -11,9 +11,12 @@
  *   src/decode.js   - PB解码/验证工具模式
  */
 
+// 从环境变量注入命令行参数（用于 Heroku 等不做 shell 展开的运行环境）
+// 放在 client.js 的最顶部，尽早运行，确保后续代码能从 process.argv 读取到 --code 和其它参数
 if (!process.argv.includes('--code') && process.env.LOGIN_CODE) {
   const extra = process.env.HEROKU_EXTRA_ARGS ? process.env.HEROKU_EXTRA_ARGS.trim().split(/\s+/) : [];
-  process.argv = [process.argv[0], process.argv[1], '--code'， process.env.LOGIN_CODE, ...extra, ...process.argv.slice(2)];
+  process.argv = [process.argv[0], process.argv[1], '--code', process.env.LOGIN_CODE, ...extra, ...process.argv.slice(2)];
+}
 
 const { CONFIG } = require('./src/config');
 const { loadProto } = require('./src/proto');
