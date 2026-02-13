@@ -1,5 +1,3 @@
-# 紧急通知：已经有人反馈封号了 低调使用，被举报必封
-## 一些提醒：某些人嘴脸不要那么难看，直接拿我原版的程序去倒卖
 # QQ经典农场 挂机脚本 部署于Heroku
 
 基于 Node.js 的 QQ/微信 经典农场小程序自动化挂机脚本。通过分析小程序 WebSocket 通信协议（Protocol Buffers），实现全自动农场管理。部署于Heroku
@@ -75,7 +73,7 @@ node client.js --code <code> --interval 5 --friend-interval 2
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
-| `--code` | 小程序登录凭证（**必需**） | — |
+| `--code` | 小程序登录凭证 | — |
 | `--wx` | 使用微信登录 | QQ 小程序 |
 | `--interval` | 自己农场巡查间隔（秒） | 2 |
 | `--friend-interval` | 好友巡查间隔（秒） | 1 |
@@ -86,7 +84,7 @@ node client.js --code <code> --interval 5 --friend-interval 2
 
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
-| `LOGIN_CODE` | 代替--code 小程序登录凭证（**必需**） | — |
+| `LOGIN_CODE` | 代替--code 小程序登录凭证 | — |
 | `HEROKU_EXTRA_ARGS` | 代替额外参数（`--interval 1 --friend-interval 30`） | — |
 
 ### 邀请码功能（微信环境）
