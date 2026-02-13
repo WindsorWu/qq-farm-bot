@@ -13,9 +13,37 @@
 
 // 从环境变量注入命令行参数（用于 Heroku 等不做 shell 展开的运行环境）
 // 放在 client.js 的最顶部，尽早运行，确保后续代码能从 process.argv 读取到 --code 和其它参数
-if (!process.argv.includes('--code') && process.env.LOGIN_CODE) {
-  const extra = process.env.HEROKU_EXTRA_ARGS ? process.env.HEROKU_EXTRA_ARGS.trim().split(/\s+/) : [];
-  process.argv = [process.argv[0], process.argv[1], '--code', process.env.LOGIN_CODE, ...extra, ...process.argv.slice(2)];
+// 现在 LOGIN_CODE 和 HEROKU_EXTRA_ARGS 都是可选的：如果两者都不存在则不做任何修改
+if (!process.argv.includes('--code')) {
+  const envCode = process.env.LOGIN_CODE;
+  const rawExtra = process.env.HEROKU_EXTRA_ARGS ? process.env.HEROKU_EXTRA_ARGS.trim().split(/\s+/).filter(Boolean) : [];
+
+  // 清理 extra：移除任何显式的 --code 或 --code=xxx，以免重复或冲突
+  const sanitizedExtra = [];
+  for (let i = 0; i < rawExtra.length; i++) {
+    const tok = rawExtra[i];
+    if (tok === '--code') {
+      // 跳过下一个 token（被当作 --code 的值）
+      i++;
+      continue;
+    }
+    if (tok.startsWith('--code=')) {
+      continue;
+    }
+    sanitizedExtra.push(tok);
+  }
+
+  // 去重：不要添加已经存在于 process.argv 的参数
+  const toAdd = sanitizedExtra.filter(t => !process.argv.includes(t));
+
+  // 只有在有要注入的内容时才修改 process.argv
+  if (envCode || toAdd.length) {
+    const base = [process.argv[0], process.argv[1]];
+    if (envCode) {
+      base.push('--code', envCode);
+    }
+    process.argv = [...base, ...toAdd, ...process.argv.slice(2)];
+  }
 }
 
 const { CONFIG } = require('./src/config');
