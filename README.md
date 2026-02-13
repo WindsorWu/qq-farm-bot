@@ -37,7 +37,7 @@
 ## 安装
 
 ```bash
-git clone https://github.com/linguo2625469/qq-farm-bot.git
+git clone https://github.com/WindsorWu/qq-farm-bot.git
 cd qq-farm-bot
 npm install
 ```
@@ -78,6 +78,13 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | `--cert-type` | 证件类型: `0/414/516/553/555` 或 `china/passport/hk/other` | `0` |
 | `--verify` | 验证 proto 定义是否正确 | — |
 | `--decode` | 进入 PB 数据解码模式 | — |
+
+### Heroku参数说明
+
+| 参数 | 说明 | 默认值 |
+|------|------|--------|
+| `LOGIN_CODE` | 代替--code 小程序登录凭证（**必需**） | — |
+| `HEROKU_EXTRA_ARGS` | 代替额外参数（--interval 1 --friend-interval 30 ） | — |
 
 ### 邀请码功能（微信环境）
 
