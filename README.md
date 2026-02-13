@@ -250,8 +250,6 @@ const ENABLE_PUT_BAD_THINGS = false;  // 是否启用放虫放草功能（暂不
 
 本项目仅供学习和研究用途。使用本脚本可能违反游戏服务条款，由此产生的一切后果由使用者自行承担。
 
-![Star History Chart](https://api.star-history.com/svg?repos=linguo2625469/qq-farm-bot&type=Date&theme=light)
-
 ## License
 
 MIT
