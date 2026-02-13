@@ -11,6 +11,10 @@
  *   src/decode.js   - PB解码/验证工具模式
  */
 
+if (!process.argv.includes('--code') && process.env.LOGIN_CODE) {
+  const extra = process.env.HEROKU_EXTRA_ARGS ? process.env.HEROKU_EXTRA_ARGS.trim().split(/\s+/) : [];
+  process.argv = [process.argv[0], process.argv[1], '--code'， process.env.LOGIN_CODE, ...extra, ...process.argv.slice(2)];
+
 const { CONFIG } = require('./src/config');
 const { loadProto } = require('./src/proto');
 const { connect, cleanup, getWs } = require('./src/network');
