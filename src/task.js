@@ -5,6 +5,7 @@
 const { types } = require('./proto');
 const { sendMsgAsync, networkEvents } = require('./network');
 const { toLong, toNum, log, logWarn, sleep } = require('./utils');
+const { getItemName } = require('./gameConfig');
 
 // ============ 任务 API ============
 
@@ -71,7 +72,7 @@ function getRewardSummary(items) {
         // 常见物品ID: 1=金币, 2=经验
         if (id === 1) summary.push(`金币${count}`);
         else if (id === 2) summary.push(`经验${count}`);
-        else summary.push(`物品#${id}x${count}`);
+        summary.push(`${getItemName(id)}(${id})x${count}`);
     }
     return summary.join('/');
 }

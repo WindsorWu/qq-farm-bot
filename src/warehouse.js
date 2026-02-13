@@ -6,7 +6,7 @@
 const { types } = require('./proto');
 const { sendMsgAsync } = require('./network');
 const { toLong, toNum, log, logWarn, emitRuntimeHint } = require('./utils');
-const { getFruitName } = require('./gameConfig');
+const { getFruitName, getItemName } = require('./gameConfig');
 const seedShopData = require('../tools/seed-shop-merged-export.json');
 
 // 游戏内金币和点券的物品 ID (GlobalData.GodItemId / DiamondItemId)

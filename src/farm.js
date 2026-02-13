@@ -7,7 +7,7 @@ const { CONFIG, PlantPhase, PHASE_NAMES } = require('./config');
 const { types } = require('./proto');
 const { sendMsgAsync, getUserState, networkEvents } = require('./network');
 const { toLong, toNum, getServerTimeSec, toTimeSec, log, logWarn, sleep } = require('./utils');
-const { getPlantNameBySeedId, getPlantName, getPlantExp, formatGrowTime, getPlantGrowTime } = require('./gameConfig');
+const { getPlantNameBySeedId, getPlantName, getPlantExp, formatGrowTime, getPlantGrowTime, getItemName } = require('./gameConfig');
 const { getPlantingRecommendation } = require('../tools/calc-exp-yield');
 
 // ============ 内部状态 ============
@@ -288,7 +288,7 @@ async function autoPlantEmptyLands(deadLandIds, emptyLandIds, unlockedLandCount)
             const gotItem = buyReply.get_items[0];
             const gotId = toNum(gotItem.id);
             const gotCount = toNum(gotItem.count);
-            log('购买', `获得物品: id=${gotId} count=${gotCount}`);
+            log('购买', `获得物品: ${getItemName(gotId)}(${gotId}) x${gotCount}`);
             if (gotId > 0) actualSeedId = gotId;
         }
         if (buyReply.cost_items) {
