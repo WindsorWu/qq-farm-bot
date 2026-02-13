@@ -84,7 +84,7 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `LOGIN_CODE` | 代替--code 小程序登录凭证（**必需**） | — |
-| `HEROKU_EXTRA_ARGS` | 代替额外参数（--interval 1 --friend-interval 30 ） | — |
+| `HEROKU_EXTRA_ARGS` | 代替额外参数（`--interval 1 --friend-interval 30`） | — |
 
 ### 邀请码功能（微信环境）
 
