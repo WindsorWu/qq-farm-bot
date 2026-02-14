@@ -41,6 +41,9 @@ const OP_NAMES = {
 // 配置: 是否只在有经验时才帮助好友  
 const HELP_ONLY_WITH_EXP = true; // 已更新可用
 
+// 新增配置: 是否启用偷菜功能
+const ENABLE_STEAL = false; 
+
 // 配置: 是否启用放虫放草功能
 const ENABLE_PUT_BAD_THINGS = false;  // 无效！！！开启后会多次访问朋友导致被拉黑 请勿更改暂时关闭放虫放草功能
 
@@ -444,8 +447,8 @@ async function visitFriend(friend, totalActions, myGid) {
         }
     }
 
-    // 偷菜: 始终执行
-    if (status.stealable.length > 0) {
+    // 偷菜: 增加开关控制
+    if (ENABLE_STEAL && status.stealable.length > 0) {
         let ok = 0;
         const stolenPlants = [];
         for (let i = 0; i < status.stealable.length; i++) {
