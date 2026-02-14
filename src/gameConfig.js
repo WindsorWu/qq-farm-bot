@@ -94,10 +94,10 @@ function getLevelExpTable() {
  * 计算当前等级的经验进度
  * @param {number} level - 当前等级
  * @param {number} totalExp - 累计总经验
- * @returns {{ current: number, needed: number }} 当前等级经验进度
+ * @returns {{ current: number, needed: number, percent: number }} 当前等级经验进度
  */
 function getLevelExpProgress(level, totalExp) {
-    if (!levelExpTable || level <= 0) return { current: 0, needed: 0 };
+    if (!levelExpTable || level <= 0) return { current: 0, needed: 0, percent: 0 };
     
     const currentLevelStart = levelExpTable[level] || 0;
     const nextLevelStart = levelExpTable[level + 1] || (currentLevelStart + 100000);
@@ -105,7 +105,10 @@ function getLevelExpProgress(level, totalExp) {
     const currentExp = Math.max(0, totalExp - currentLevelStart);
     const neededExp = nextLevelStart - currentLevelStart;
     
-    return { current: currentExp, needed: neededExp };
+    // 计算百分比
+    const percent = neededExp > 0 ? Math.floor((currentExp / neededExp) * 100) : 0;
+    
+    return { current: currentExp, needed: neededExp, percent };
 }
 
 // ============ 植物配置相关 ============
