@@ -325,7 +325,7 @@ function sendLogin(onLoginSuccess) {
     sendMsg('gamepb.userpb.UserService', 'Login', body, (err, bodyBytes, meta) => {
         if (err) {
             log('登录', `失败: ${err.message}`);
-            notifyBark('QQ农场', '登录失败: ' + err.message);
+            notifyBark('QQ农场', '登录失败: ' + err.message); // 不等待，避免延迟返回
             return;
         }
         try {
@@ -386,7 +386,7 @@ function startHeartbeat() {
             logWarn('心跳', `连接可能已断开 (${Math.round(timeSinceLastResponse/1000)}s 无响应, pending=${pendingCallbacks.size})`);
             if (heartbeatMissCount >= 2) {
                 log('心跳', '尝试重连...');
-                notifyBark('QQ农场', '心跳超时，尝试重连...');
+                notifyBark('QQ农场', '心跳超时，尝试重连...'); // 不等待，避免延迟重连逻辑
                 // 清理待处理的回调，避免堆积
                 pendingCallbacks.forEach((cb, seq) => {
                     try { cb(new Error('连接超时，已清理')); } catch (e) {}
@@ -434,13 +434,13 @@ function connect(code, onLoginSuccess) {
 
     ws.on('close', (code, reason) => {
         console.log(`[WS] 连接关闭 (code=${code})`);
-        notifyBark('QQ农场', 'WebSocket 连接已关闭');
+        notifyBark('QQ农场', 'WebSocket 连接已关闭'); // 不等待，避免延迟清理
         cleanup();
     });
 
     ws.on('error', (err) => {
         logWarn('WS', `错误: ${err.message}`);
-        notifyBark('QQ农场', 'WebSocket 连接错误: ' + err.message);
+        notifyBark('QQ农场', 'WebSocket 连接错误: ' + err.message); // 不等待，避免延迟错误处理
     });
 }
 
