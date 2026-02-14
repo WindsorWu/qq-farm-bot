@@ -201,6 +201,18 @@ async function main() {
         // 启动时立即检查一次背包
         setTimeout(() => debugSellFruits(), 5000);
         startSellLoop(60000);  // 每分钟自动出售仓库果实
+
+                // 添加：每小时打印一次等级经验进度
+        const { statusData } = require('./src/status');
+        const { getLevelExpProgress } = require('./src/gameConfig');
+        const { log } = require('./src/utils');
+
+        setInterval(() => {
+            if (statusData.level > 0) {
+                const progress = getLevelExpProgress(statusData.level, statusData.exp);
+                log('进度', `当前等级: Lv${statusData.level}, 经验进度: ${progress.current}/${progress.needed} (${progress.percent}%)`);
+            }
+        }, 60000); // 3600000 毫秒 = 1 小时
     });
 
     // 退出处理
