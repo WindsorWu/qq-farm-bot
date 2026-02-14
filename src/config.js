@@ -13,7 +13,10 @@ const CONFIG = {
     forceLowestLevelCrop: false,  // 开启后固定种最低等级作物（通常是白萝卜），跳过经验效率分析
     
     // Heroku Config Vars 配置：读取 ENABLE_STEAL，如果不设置或设置为 'true' 则开启，设置为 'false' 则关闭
-    enableSteal: process.env.ENABLE_STEAL !== 'false', 
+    enableSteal: process.env.ENABLE_STEAL !== 'false',
+    
+    // 喵提醒推送配置：从环境变量读取 MIAO_ID，用于连接失败或code失效时推送通知
+    miaoId: process.env.MIAO_ID, 
 
     device_info: {
         client_version: "1.6.0.14_20251224",

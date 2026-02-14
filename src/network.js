@@ -6,7 +6,7 @@ const WebSocket = require('ws');
 const EventEmitter = require('events');
 const { CONFIG } = require('./config');
 const { types } = require('./proto');
-const { toLong, toNum, syncServerTime, log, logWarn } = require('./utils');
+const { toLong, toNum, syncServerTime, log, logWarn, sendMiaoNotify } = require('./utils');
 const { updateStatusFromLogin, updateStatusGold, updateStatusLevel } = require('./status');
 
 // ============ 事件发射器 (用于推送通知) ============
@@ -156,7 +156,9 @@ function handleNotify(msg) {
             log('推送', `被踢下线! ${type}`);
             try {
                 const notify = types.KickoutNotify.decode(eventBody);
-                log('推送', `原因: ${notify.reason_message || '未知'}`);
+                const reason = notify.reason_message || '未知';
+                log('推送', `原因: ${reason}`);
+                sendMiaoNotify(`QQ农场被踢下线: ${reason}`);
             } catch (e) { }
             return;
         }
@@ -325,6 +327,7 @@ function sendLogin(onLoginSuccess) {
     sendMsg('gamepb.userpb.UserService', 'Login', body, (err, bodyBytes, meta) => {
         if (err) {
             log('登录', `失败: ${err.message}`);
+            sendMiaoNotify(`QQ农场登录失败: ${err.message}`);
             return;
         }
         try {
@@ -441,6 +444,7 @@ function connect(code, onLoginSuccess) {
 
     ws.on('error', (err) => {
         logWarn('WS', `错误: ${err.message}`);
+        sendMiaoNotify(`QQ农场连接错误: ${err.message}`);
     });
 }
 

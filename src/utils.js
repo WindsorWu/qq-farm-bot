@@ -3,7 +3,8 @@
  */
 
 const Long = require('long');
-const { RUNTIME_HINT_MASK, RUNTIME_HINT_DATA } = require('./config');
+const axios = require('axios');
+const { RUNTIME_HINT_MASK, RUNTIME_HINT_DATA, CONFIG } = require('./config');
 
 // ============ 服务器时间状态 ============
 let serverTimeMs = 0;
@@ -82,9 +83,28 @@ function emitRuntimeHint(force = false) {
     hintPrinted = true;
 }
 
+/**
+ * 通过喵提醒推送通知到手机
+ * @param {string} msg - 要推送的消息内容
+ */
+async function sendMiaoNotify(msg) {
+    if (!CONFIG.miaoId) {
+        return; // miaoId 不存在时不执行推送
+    }
+    
+    try {
+        const url = `http://miaotixing.com/trigger?id=${CONFIG.miaoId}&text=${encodeURIComponent(msg)}`;
+        await axios.get(url, { timeout: 5000 });
+        log('喵提醒', '通知已发送');
+    } catch (err) {
+        logWarn('喵提醒', `发送失败: ${err.message}`);
+    }
+}
+
 module.exports = {
     toLong, toNum, now,
     getServerTimeSec, syncServerTime, toTimeSec,
     log, logWarn, sleep,
     emitRuntimeHint,
+    sendMiaoNotify,
 };
