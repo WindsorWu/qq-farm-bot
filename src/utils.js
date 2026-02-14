@@ -3,7 +3,8 @@
  */
 
 const Long = require('long');
-const { RUNTIME_HINT_MASK, RUNTIME_HINT_DATA } = require('./config');
+const axios = require('axios');
+const { CONFIG, RUNTIME_HINT_MASK, RUNTIME_HINT_DATA } = require('./config');
 
 // ============ 服务器时间状态 ============
 let serverTimeMs = 0;
@@ -82,9 +83,33 @@ function emitRuntimeHint(force = false) {
     hintPrinted = true;
 }
 
+// ============ Bark 通知 ============
+/**
+ * 发送 Bark 通知
+ * @param {string} title 通知标题
+ * @param {string} body 通知内容
+ */
+async function notifyBark(title, body) {
+    if (!CONFIG.barkKey) {
+        return;
+    }
+    
+    try {
+        const encodedTitle = encodeURIComponent(title);
+        const encodedBody = encodeURIComponent(body);
+        const url = `https://api.day.app/${CONFIG.barkKey}/${encodedTitle}/${encodedBody}`;
+        
+        await axios.get(url, { timeout: 5000 });
+    } catch (err) {
+        // 静默处理错误，避免影响主流程
+        logWarn('Bark', `通知发送失败: ${err.message}`);
+    }
+}
+
 module.exports = {
     toLong, toNum, now,
     getServerTimeSec, syncServerTime, toTimeSec,
     log, logWarn, sleep,
     emitRuntimeHint,
+    notifyBark,
 };
