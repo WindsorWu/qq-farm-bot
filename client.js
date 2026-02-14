@@ -58,6 +58,9 @@ const { processInviteCodes } = require('./src/invite');
 const { verifyMode, decodeMode } = require('./src/decode');
 const { emitRuntimeHint, sleep } = require('./src/utils');
 const { getQQFarmCodeByScan } = require('./src/qqQrLogin');
+const { initFileLogger } = require('./src/logger');
+
+initFileLogger();
 
 // ============ 帮助信息 ============
 function showHelp() {
