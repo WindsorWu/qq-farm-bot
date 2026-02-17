@@ -11,6 +11,7 @@ const CONFIG = {
     farmCheckInterval: 1000,    // 自己农场巡查完成后等待间隔 (可通过 --interval 修改, 最低1秒)
     friendCheckInterval: 10000,   // 好友巡查完成后等待间隔 (可通过 --friend-interval 修改, 最低1秒)
     forceLowestLevelCrop: false,  // 开启后固定种最低等级作物（通常是白萝卜），跳过经验效率分析
+    preferredSeedId: null,        // 指定种植的种子ID (通过 --plant 参数设置)
     
     // Heroku Config Vars 配置：读取 ENABLE_STEAL，如果不设置或设置为 'true' 则开启，设置为 'false' 则关闭
     enableSteal: process.env.ENABLE_STEAL !== 'false',

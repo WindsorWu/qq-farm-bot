@@ -209,6 +209,16 @@ async function findBestSeed(landsCount) {
         return null;
     }
 
+    // 如果用户指定了种子ID，优先使用
+    if (CONFIG.preferredSeedId) {
+        const preferred = available.find(x => x.seedId === CONFIG.preferredSeedId);
+        if (preferred) {
+            return preferred;
+        } else {
+            logWarn('商店', `指定的种子ID ${CONFIG.preferredSeedId} 不可用，使用自动选择`);
+        }
+    }
+
     if (CONFIG.forceLowestLevelCrop) {
         available.sort((a, b) => a.requiredLevel - b.requiredLevel || a.price - b.price);
         return available[0];
