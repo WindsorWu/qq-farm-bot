@@ -133,6 +133,8 @@ function parseArgs(args) {
             const seedId = parseInt(args[++i]);
             if (!isNaN(seedId)) {
                 CONFIG.preferredSeedId = seedId;
+            } else {
+                console.warn(`[警告] 无效的种子ID: ${args[i]}，将使用自动选择`);
             }
         }
     }
