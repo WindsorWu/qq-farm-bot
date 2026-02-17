@@ -131,7 +131,9 @@ function parseArgs(args) {
         }
         if (args[i] === '--plant' && args[i + 1]) {
             const seedId = parseInt(args[++i]);
-            CONFIG.preferredSeedId = seedId;
+            if (!isNaN(seedId)) {
+                CONFIG.preferredSeedId = seedId;
+            }
         }
     }
     return options;
