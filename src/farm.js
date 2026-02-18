@@ -5,14 +5,13 @@
 const protobuf = require('protobufjs');
 const { CONFIG, PlantPhase, PHASE_NAMES } = require('./config');
 const { types } = require('./proto');
-const { sendMsgAsync, getUserState, networkEvents } = require('./network');
+const { sendMsgAsync, getUserState, networkEvents, completeLoginBox } = require('./network');
 const { toLong, toNum, getServerTimeSec, toTimeSec, log, logWarn, sleep } = require('./utils');
 const { getPlantNameBySeedId, getPlantName, getPlantExp, formatGrowTime, getPlantGrowTime, getItemName } = require('./gameConfig');
 const { getPlantingRecommendation } = require('../tools/calc-exp-yield');
 
 // ============ 内部状态 ============
 let isCheckingFarm = false;
-let isFirstFarmCheck = true;
 let farmCheckTimer = null;
 let farmLoopRunning = false;
 let landStatsTimer = null;
@@ -409,9 +408,9 @@ function getLandTypeCounts(lands) {
         if (!land.unlocked) continue;
 
         const level = toNum(land.level);
-        if (level === 1) red++;
-        else if (level === 2) black++;
-        else if (level === 3) gold++;
+        if (level === 2) red++;
+        else if (level === 3) black++;
+        else if (level === 4) gold++;
 
         if (land.could_upgrade) upgradeCount++;
     }
@@ -428,12 +427,12 @@ function getCurrentPhase(phases, debug, landLabel) {
     const nowSec = getServerTimeSec();
 
     if (debug) {
-        console.log(`    ${landLabel} 服务器时间=${nowSec} (${new Date(nowSec * 1000).toLocaleTimeString()})`);
+        console.log(`    ${landLabel} 服务器时间=${nowSec} (${new Date(现在Sec * 1000).toLocaleTimeString()})`);
         for (let i = 0; i < phases.length; i++) {
             const p = phases[i];
             const bt = toTimeSec(p.begin_time);
             const phaseName = PHASE_NAMES[p.phase] || `阶段${p.phase}`;
-            const diff = bt > 0 ? (bt - nowSec) : 0;
+            const diff = bt > 0 ? (bt - 现在Sec) : 0;
             const diffStr = diff > 0 ? `(未来 ${diff}s)` : diff < 0 ? `(已过 ${-diff}s)` : '';
             console.log(`    ${landLabel}   [${i}] ${phaseName}(${p.phase}) begin=${bt} ${diffStr} dry=${toTimeSec(p.dry_time)} weed=${toTimeSec(p.weeds_time)} insect=${toTimeSec(p.insect_time)}`);
         }
@@ -441,7 +440,7 @@ function getCurrentPhase(phases, debug, landLabel) {
 
     for (let i = phases.length - 1; i >= 0; i--) {
         const beginTime = toTimeSec(phases[i].begin_time);
-        if (beginTime > 0 && beginTime <= nowSec) {
+        if (beginTime > 0 && beginTime <= 现在Sec) {
             if (debug) {
                 console.log(`    ${landLabel}   → 当前阶段: ${PHASE_NAMES[phases[i].phase] || phases[i].phase}`);
             }
@@ -597,6 +596,7 @@ async function checkFarm() {
         const landsReply = await getAllLands();
         if (!landsReply.lands || landsReply.lands.length === 0) {
             log('农场', '没有土地数据');
+            completeLoginBox(null);
             return;
         }
 
@@ -604,15 +604,11 @@ async function checkFarm() {
         const landStats = getLandTypeCounts(lands);
         lastLandStats = landStats;
 
-        // 首次巡田：在登录成功信息后显示土地统计
-        if (isFirstFarmCheck) {
-            console.log(`  土地: 总${landStats.total}块 | 红:${landStats.red} 黑:${landStats.black} 金:${landStats.gold} | 可升级:${landStats.upgradeCount} 可解锁:${landStats.unlockCount}`);
-            console.log('');
-        }
+        // 首次巡田：完成登录成功框（追加土地统计）
+        completeLoginBox(landStats);
 
         const status = analyzeLands(lands);
         const unlockedLandCount = lands.filter(land => land && land.unlocked).length;
-        isFirstFarmCheck = false;
 
         // 构建状态摘要
         const statusParts = [];
@@ -695,6 +691,7 @@ async function checkFarm() {
             log('农场', `[${statusParts.join(' ')}]${actionStr}${!hasWork ? ' 无需操作' : ''}`)
         }
     } catch (err) {
+        completeLoginBox(null);
         logWarn('巡田', `检查失败: ${err.message}`);
     } finally {
         isCheckingFarm = false;
@@ -725,7 +722,7 @@ function startFarmCheckLoop() {
     // 每5分钟输出土地统计摘要
     landStatsTimer = setInterval(() => {
         if (lastLandStats) {
-            log('农场', `土地统计: 总${lastLandStats.total}块 | 可升级:${lastLandStats.upgradeCount} 可解锁:${lastLandStats.unlockCount}`);
+            log('土地', `总${lastLandStats.total}块 | 红:${lastLandStats.red} 黑:${lastLandStats.black} 金:${lastLandStats.gold} | 可升级:${lastLandStats.upgradeCount} 可解锁:${lastLandStats.unlockCount}`);
         }
     }, 5 * 60 * 1000);
 }
