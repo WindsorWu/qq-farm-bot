@@ -457,19 +457,21 @@ function analyzeLands(lands) {
             if (debug) console.log(`  土地#${id}: 未解锁但可解锁`);
         }
         
-        // 检查是否可以升级 (已解锁的土地)
-        if (land.could_upgrade && land.unlocked) {
-            result.eligibleForUpgrade.push(id);
-            if (debug) console.log(`  土地#${id}: 可升级`);
-        }
-        
         if (!land.unlocked) {
             if (debug) console.log(`  土地#${id}: 未解锁`);
             continue;
         }
 
         const plant = land.plant;
-        if (!plant || !plant.phases || plant.phases.length === 0) {
+        const isEmpty = !plant || !plant.phases || plant.phases.length === 0;
+        
+        // 检查是否可以升级 (已解锁且空地的土地)
+        if (land.could_upgrade && isEmpty) {
+            result.eligibleForUpgrade.push(id);
+            if (debug) console.log(`  土地#${id}: 可升级`);
+        }
+        
+        if (isEmpty) {
             result.empty.push(id);
             if (debug) console.log(`  土地#${id}: 空地`);
             continue;
