@@ -486,6 +486,7 @@ function completeLoginBox(landStats) {
         sendMiaoNotify(_pendingLoginMsg + landLine);
         _pendingLoginMsg = null;
     }
+    networkEvents.emit('loginBoxComplete');
 }
 
 module.exports = {

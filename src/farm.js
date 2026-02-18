@@ -427,12 +427,12 @@ function getCurrentPhase(phases, debug, landLabel) {
     const nowSec = getServerTimeSec();
 
     if (debug) {
-        console.log(`    ${landLabel} 服务器时间=${nowSec} (${new Date(现在Sec * 1000).toLocaleTimeString()})`);
+        console.log(`    ${landLabel} 服务器时间=${nowSec} (${new Date(nowSec * 1000).toLocaleTimeString()})`);
         for (let i = 0; i < phases.length; i++) {
             const p = phases[i];
             const bt = toTimeSec(p.begin_time);
             const phaseName = PHASE_NAMES[p.phase] || `阶段${p.phase}`;
-            const diff = bt > 0 ? (bt - 现在Sec) : 0;
+            const diff = bt > 0 ? (bt - nowSec) : 0;
             const diffStr = diff > 0 ? `(未来 ${diff}s)` : diff < 0 ? `(已过 ${-diff}s)` : '';
             console.log(`    ${landLabel}   [${i}] ${phaseName}(${p.phase}) begin=${bt} ${diffStr} dry=${toTimeSec(p.dry_time)} weed=${toTimeSec(p.weeds_time)} insect=${toTimeSec(p.insect_time)}`);
         }
@@ -440,7 +440,7 @@ function getCurrentPhase(phases, debug, landLabel) {
 
     for (let i = phases.length - 1; i >= 0; i--) {
         const beginTime = toTimeSec(phases[i].begin_time);
-        if (beginTime > 0 && beginTime <= 现在Sec) {
+        if (beginTime > 0 && beginTime <= nowSec) {
             if (debug) {
                 console.log(`    ${landLabel}   → 当前阶段: ${PHASE_NAMES[phases[i].phase] || phases[i].phase}`);
             }
