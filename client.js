@@ -48,7 +48,7 @@ if (!process.argv.includes('--code')) {
 
 const { CONFIG } = require('./src/config');
 const { loadProto } = require('./src/proto');
-const { connect, cleanup, getWs } = require('./src/network');
+const { connect, cleanup, getWs, networkEvents } = require('./src/network');
 const { startFarmCheckLoop, stopFarmCheckLoop } = require('./src/farm');
 const { startFriendCheckLoop, stopFriendCheckLoop } = require('./src/friend');
 const { initTaskSystem, cleanupTaskSystem } = require('./src/task');
@@ -181,9 +181,9 @@ async function startBot(initialOptions) {
         // 重置重连计数（登录成功说明一切正常）
         reconnectAttempts = 0;
         
-        // 处理邀请码 (仅微信环境)
-        await processInviteCodes();
-        
+        // 处理邀请码 (仅微信环境)，在登录框关闭（土地统计打印）后执行
+        networkEvents.once('loginBoxComplete', () => { processInviteCodes().catch(() => {}); });
+
         startFarmCheckLoop();
         startFriendCheckLoop();
         initTaskSystem();
