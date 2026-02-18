@@ -147,6 +147,7 @@ async function unlockLand(landIds) {
 async function upgradeLand(landIds) {
     let successCount = 0;
     const successIds = [];
+    const failedIds = [];
     
     for (const landId of landIds) {
         try {
@@ -160,11 +161,12 @@ async function upgradeLand(landIds) {
             log('升级', `✓ 土地#${landId} 已升级`);
         } catch (e) {
             logWarn('升级', `土地#${landId} 失败: ${e.message}`);
+            failedIds.push(landId);
         }
         if (landIds.length > 1) await sleep(200);  // 200ms 间隔
     }
     
-    return { successCount, successIds };
+    return { successCount, successIds, failedIds };
 }
 
 // ============ 商店 API ============
@@ -664,20 +666,24 @@ async function checkFarm() {
         }
 
         // 升级土地（如果配置开启）- 收割后、种植前执行
+        let failedUpgradeIds = [];
         if (CONFIG.autoUpgradeRedLand && status.eligibleForUpgrade.length > 0) {
             try {
-                const { successCount, successIds } = await upgradeLand(status.eligibleForUpgrade);
+                const { successCount, successIds, failedIds } = await upgradeLand(status.eligibleForUpgrade);
                 if (successCount > 0) {
                     actions.push(`升级${successCount}`);
                     // 添加明确的提醒日志，便于操作员注意
                     log('农场', `⬆️ 已自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
                 }
+                failedUpgradeIds = failedIds;
             } catch (e) { logWarn('升级', e.message); }
         }
 
         // 铲除 + 种植 + 施肥（需要顺序执行）
         const allDeadLands = [...status.dead, ...harvestedLandIds];
-        const allEmptyLands = [...status.empty];
+        // 排除升级失败的土地，等下一轮再重试升级
+        const failedUpgradeSet = new Set(failedUpgradeIds);
+        const allEmptyLands = status.empty.filter(id => !failedUpgradeSet.has(id));
         if (allDeadLands.length > 0 || allEmptyLands.length > 0) {
             try {
                 await autoPlantEmptyLands(allDeadLands, allEmptyLands, unlockedLandCount);
