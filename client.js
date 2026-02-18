@@ -139,64 +139,55 @@ function parseArgs(args) {
 }
 
 // ============ 主函数 ============
-async function main() {
-    const args = process.argv.slice(2);
-    let usedQrLogin = false;
+let isReconnecting = false;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 5000; // 5秒后重连
 
-    // 加载 proto 定义
-    await loadProto();
-
-    // 验证模式
-    if (args.includes('--verify')) {
-        await verifyMode();
-        return;
-    }
-
-    // 解码模式
-    if (args.includes('--decode')) {
-        await decodeMode(args);
-        return;
-    }
-
-    // 正常挂机模式
-    const options = parseArgs(args);
-
+async function startBot(initialOptions) {
+    const options = { ...initialOptions };
+    
     // QQ 平台支持扫码登录: 显式 --qr，或未传 --code 时自动触发
-    if (!options.code && CONFIG.platform === 'qq' && (options.qrLogin || !args.includes('--code'))) {
+    if (!options.code && CONFIG.platform === 'qq' && (options.qrLogin || !options.hasCodeArg)) {
         console.log('[扫码登录] 正在获取二维码...');
-        options.code = await getQQFarmCodeByScan();
-        usedQrLogin = true;
-        console.log(`[扫码登录] 获取成功，code=${options.code.substring(0, 8)}...`);
+        try {
+            options.code = await getQQFarmCodeByScan();
+            options.usedQrLogin = true;
+            console.log(`[扫码登录] 获取成功，code=${options.code.substring(0, 8)}...`);
+        } catch (err) {
+            console.error(`[扫码登录] 失败: ${err.message}`);
+            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                console.log(`[重连] 将在 ${RECONNECT_DELAY_MS / 1000} 秒后重试 (第 ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} 次)`);
+                await sleep(RECONNECT_DELAY_MS);
+                return startBot(initialOptions);
+            } else {
+                console.error('[重连] 已达到最大重试次数，退出');
+                process.exit(1);
+            }
+        }
     }
 
     if (!options.code) {
         if (CONFIG.platform === 'wx') {
             console.log('[参数] 微信模式仍需通过 --code 传入登录凭证');
         }
-        showHelp();
-        process.exit(1);
-    }
-    if (options.deleteAccountMode && (!options.name || !options.certId)) {
-        console.log('[参数] 注销账号模式必须提供 --name 和 --cert-id');
-        showHelp();
-        process.exit(1);
+        return false;
     }
 
     // 扫码阶段结束后清屏，避免状态栏覆盖二维码区域导致界面混乱
-    if (usedQrLogin && process.stdout.isTTY) {
+    if (options.usedQrLogin && process.stdout.isTTY) {
         process.stdout.write('\x1b[2J\x1b[H');
     }
-
-    // 初始化状态栏
-    initStatusBar();
-    setStatusPlatform(CONFIG.platform);
-    emitRuntimeHint(true);
 
     const platformName = CONFIG.platform === 'wx' ? '微信' : 'QQ';
     console.log(`[启动] ${platformName} code=${options.code.substring(0, 8)}... 农场${CONFIG.farmCheckInterval / 1000}s 好友${CONFIG.friendCheckInterval / 1000}s`);
 
     // 连接并登录，登录成功后启动各功能模块
     connect(options.code, async () => {
+        // 重置重连计数
+        reconnectAttempts = 0;
+        
         // 处理邀请码 (仅微信环境)
         await processInviteCodes();
         
@@ -222,6 +213,96 @@ async function main() {
             }
         }, 60000); // 1小时 = 3600000ms
     });
+
+    return true;
+}
+
+async function handleDisconnect(event) {
+    if (isReconnecting) return; // 避免重复处理
+    
+    isReconnecting = true;
+    console.log(`\n[断线] 原因: ${event.reason}, 消息: ${event.message}`);
+    
+    // 停止所有循环
+    stopFarmCheckLoop();
+    stopFriendCheckLoop();
+    cleanupTaskSystem();
+    stopSellLoop();
+    cleanup();
+    
+    // 关闭 WebSocket
+    const ws = getWs();
+    if (ws && ws.readyState === 1) {
+        try {
+            ws.close();
+        } catch (e) { }
+    }
+    
+    // 仅 QQ 平台支持自动重连扫码登录
+    if (CONFIG.platform === 'qq') {
+        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            reconnectAttempts++;
+            console.log(`[重连] 将在 ${RECONNECT_DELAY_MS / 1000} 秒后尝试扫码重新登录 (第 ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} 次)`);
+            await sleep(RECONNECT_DELAY_MS);
+            
+            isReconnecting = false;
+            // 重新使用扫码登录
+            await startBot({ qrLogin: true, hasCodeArg: false });
+        } else {
+            console.error('[重连] 已达到最大重试次数，退出');
+            cleanupStatusBar();
+            process.exit(1);
+        }
+    } else {
+        console.log('[重连] 微信平台不支持自动重连，需要手动重启并提供新的 code');
+        cleanupStatusBar();
+        process.exit(1);
+    }
+}
+
+async function main() {
+    const args = process.argv.slice(2);
+
+    // 加载 proto 定义
+    await loadProto();
+
+    // 验证模式
+    if (args.includes('--verify')) {
+        await verifyMode();
+        return;
+    }
+
+    // 解码模式
+    if (args.includes('--decode')) {
+        await decodeMode(args);
+        return;
+    }
+
+    // 正常挂机模式
+    const options = parseArgs(args);
+    options.hasCodeArg = args.includes('--code');
+    
+    if (!options.code && !options.qrLogin && CONFIG.platform === 'wx') {
+        showHelp();
+        process.exit(1);
+    }
+
+    // 初始化状态栏
+    initStatusBar();
+    setStatusPlatform(CONFIG.platform);
+    emitRuntimeHint(true);
+
+    // 监听断线事件，用于自动重连
+    const { networkEvents } = require('./src/network');
+    networkEvents.on('disconnected', handleDisconnect);
+
+    // 启动机器人
+    const started = await startBot(options);
+    if (!started) {
+        showHelp();
+        cleanupStatusBar();
+        process.exit(1);
+    }
 
     // 退出处理
     process.on('SIGINT', () => {
