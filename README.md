@@ -91,8 +91,8 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | `HEROKU_EXTRA_ARGS` | 代替额外参数（`--interval 1 --friend-interval 30`） | — |
 | `ENABLE_STEAL` | 偷菜 | true |
 | `MIAO_ID` | 喵通知ID | — |
-| `AUTO_EXPAND_LAND` | 自动解锁土地 | false |
-| `AUTO_UPGRADE_RED_LAND` | 自动升级红土地 | false |
+| `AUTO_EXPAND_LAND` | 自动解锁土地 | true |
+| `AUTO_UPGRADE_RED_LAND` | 自动升级红土地 | true |
 
 ### 邀请码功能（微信环境）
 
@@ -238,8 +238,8 @@ const CONFIG = {
     forceLowestLevelCrop: false, // true: 固定最低等级作物（白萝卜优先），跳过经验效率分析
     
     // 土地扩展配置：通过环境变量控制
-    autoExpandLand: process.env.AUTO_EXPAND_LAND === 'true',          // 自动解锁土地
-    autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND === 'true', // 自动升级红土地
+    autoExpandLand: process.env.AUTO_EXPAND_LAND !== 'false',          // 自动解锁土地 (默认启用)
+    autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND !== 'false', // 自动升级红土地 (默认启用)
 };
 ```
 

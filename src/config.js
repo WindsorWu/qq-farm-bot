@@ -20,8 +20,8 @@ const CONFIG = {
     miaoId: process.env.MIAO_ID, 
 
     // 土地扩展配置：自动解锁土地和自动升级红土地
-    autoExpandLand: process.env.AUTO_EXPAND_LAND === 'true',      // 默认 false，设置为 'true' 开启自动解锁土地
-    autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND === 'true',  // 默认 false，设置为 'true' 开启自动升级红土地 
+    autoExpandLand: process.env.AUTO_EXPAND_LAND !== 'false',      // 默认 true，设置为 'false' 禁用自动解锁土地
+    autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND !== 'false',  // 默认 true，设置为 'false' 禁用自动升级红土地 
 
     device_info: {
         client_version: "1.6.0.14_20251224",
