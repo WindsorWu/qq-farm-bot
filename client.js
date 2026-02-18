@@ -148,7 +148,7 @@ async function startBot(initialOptions) {
     const options = { ...initialOptions };
     
     // QQ 平台支持扫码登录: 显式 --qr，或未传 --code 时自动触发
-    if (!options.code && CONFIG.platform === 'qq' && (options.qrLogin || !options.hasCodeArg)) {
+    if (!options.code && CONFIG.platform === 'qq' && (options.qrLogin || !options.codeProvidedExplicitly)) {
         console.log('[扫码登录] 正在获取二维码...');
         try {
             options.code = await getQQFarmCodeByScan();
@@ -156,15 +156,8 @@ async function startBot(initialOptions) {
             console.log(`[扫码登录] 获取成功，code=${options.code.substring(0, 8)}...`);
         } catch (err) {
             console.error(`[扫码登录] 失败: ${err.message}`);
-            if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                reconnectAttempts++;
-                console.log(`[重连] 将在 ${RECONNECT_DELAY_MS / 1000} 秒后重试 (第 ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} 次)`);
-                await sleep(RECONNECT_DELAY_MS);
-                return startBot(initialOptions);
-            } else {
-                console.error('[重连] 已达到最大重试次数，退出');
-                process.exit(1);
-            }
+            // 扫码失败时不在这里重试，让调用者决定是否重试
+            throw err;
         }
     }
 
@@ -185,7 +178,7 @@ async function startBot(initialOptions) {
 
     // 连接并登录，登录成功后启动各功能模块
     connect(options.code, async () => {
-        // 重置重连计数
+        // 重置重连计数（登录成功说明一切正常）
         reconnectAttempts = 0;
         
         // 处理邀请码 (仅微信环境)
@@ -218,7 +211,10 @@ async function startBot(initialOptions) {
 }
 
 async function handleDisconnect(event) {
-    if (isReconnecting) return; // 避免重复处理
+    if (isReconnecting) {
+        console.log(`[断线] 已在重连中，忽略本次事件: ${event.reason}`);
+        return; // 避免重复处理
+    }
     
     isReconnecting = true;
     console.log(`\n[断线] 原因: ${event.reason}, 消息: ${event.message}`);
@@ -230,9 +226,9 @@ async function handleDisconnect(event) {
     stopSellLoop();
     cleanup();
     
-    // 关闭 WebSocket
+    // 关闭 WebSocket (close() 对已关闭的连接是安全的)
     const ws = getWs();
-    if (ws && ws.readyState === 1) {
+    if (ws) {
         try {
             ws.close();
         } catch (e) { }
@@ -246,8 +242,14 @@ async function handleDisconnect(event) {
             await sleep(RECONNECT_DELAY_MS);
             
             isReconnecting = false;
-            // 重新使用扫码登录
-            await startBot({ qrLogin: true, hasCodeArg: false });
+            try {
+                // 重新使用扫码登录
+                await startBot({ qrLogin: true, codeProvidedExplicitly: false });
+            } catch (err) {
+                console.error(`[重连] 启动失败: ${err.message}`);
+                // 如果启动失败，重置标志以便后续可以再次尝试
+                isReconnecting = false;
+            }
         } else {
             console.error('[重连] 已达到最大重试次数，退出');
             cleanupStatusBar();
@@ -280,7 +282,7 @@ async function main() {
 
     // 正常挂机模式
     const options = parseArgs(args);
-    options.hasCodeArg = args.includes('--code');
+    options.codeProvidedExplicitly = args.includes('--code');
     
     if (!options.code && !options.qrLogin && CONFIG.platform === 'wx') {
         showHelp();
@@ -297,11 +299,22 @@ async function main() {
     networkEvents.on('disconnected', handleDisconnect);
 
     // 启动机器人
-    const started = await startBot(options);
-    if (!started) {
-        showHelp();
-        cleanupStatusBar();
-        process.exit(1);
+    try {
+        const started = await startBot(options);
+        if (!started) {
+            showHelp();
+            cleanupStatusBar();
+            process.exit(1);
+        }
+    } catch (err) {
+        console.error(`[启动] 失败: ${err.message}`);
+        // 如果是首次启动失败，尝试重连
+        if (CONFIG.platform === 'qq' && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+            await handleDisconnect({ reason: 'startup_failed', message: err.message });
+        } else {
+            cleanupStatusBar();
+            process.exit(1);
+        }
     }
 
     // 退出处理
