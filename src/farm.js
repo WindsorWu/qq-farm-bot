@@ -5,14 +5,13 @@
 const protobuf = require('protobufjs');
 const { CONFIG, PlantPhase, PHASE_NAMES } = require('./config');
 const { types } = require('./proto');
-const { sendMsgAsync, getUserState, networkEvents } = require('./network');
+const { sendMsgAsync, getUserState, networkEvents, completeLoginBox } = require('./network');
 const { toLong, toNum, getServerTimeSec, toTimeSec, log, logWarn, sleep } = require('./utils');
 const { getPlantNameBySeedId, getPlantName, getPlantExp, formatGrowTime, getPlantGrowTime, getItemName } = require('./gameConfig');
 const { getPlantingRecommendation } = require('../tools/calc-exp-yield');
 
 // ============ 内部状态 ============
 let isCheckingFarm = false;
-let isFirstFarmCheck = true;
 let farmCheckTimer = null;
 let farmLoopRunning = false;
 let landStatsTimer = null;
@@ -469,7 +468,7 @@ function analyzeLands(lands) {
 
     if (debug) {
         console.log('');
-        console。log('========== 首次巡田详细日志 ==========');
+        console.log('========== 首次巡田详细日志 ==========');
         console.log(`  服务器时间(秒): ${nowSec}  (${new Date(nowSec * 1000).toLocaleString()})`);
         console.log(`  总土地数: ${lands.length}`);
         console.log('');
@@ -597,6 +596,7 @@ async function checkFarm() {
         const landsReply = await getAllLands();
         if (!landsReply.lands || landsReply.lands.length === 0) {
             log('农场', '没有土地数据');
+            completeLoginBox(null);
             return;
         }
 
@@ -604,13 +604,8 @@ async function checkFarm() {
         const landStats = getLandTypeCounts(lands);
         lastLandStats = landStats;
 
-        // 首次巡田：在登录成功信息后显示土地统计
-        if (isFirstFarmCheck) {
-            console.log(`  土地:   总${landStats.total}块 | 红:${landStats.red} 黑:${landStats.black} 金:${landStats.gold} | 可升级:${landStats.upgradeCount} 可解锁:${landStats.unlockCount}`);
-            console。log('===============================');
-            console.log('');
-            isFirstFarmCheck = false;
-        }
+        // 首次巡田：完成登录成功框（追加土地统计）
+        completeLoginBox(landStats);
 
         const status = analyzeLands(lands);
         const unlockedLandCount = lands.filter(land => land && land.unlocked).length;
@@ -696,11 +691,7 @@ async function checkFarm() {
             log('农场', `[${statusParts.join(' ')}]${actionStr}${!hasWork ? ' 无需操作' : ''}`)
         }
     } catch (err) {
-        if (isFirstFarmCheck) {
-            console。log('===============================');
-            console.log('');
-            isFirstFarmCheck = false;
-        }
+        completeLoginBox(null);
         logWarn('巡田', `检查失败: ${err.message}`);
     } finally {
         isCheckingFarm = false;
@@ -731,7 +722,7 @@ function startFarmCheckLoop() {
     // 每5分钟输出土地统计摘要
     landStatsTimer = setInterval(() => {
         if (lastLandStats) {
-            log('土地'， `总${lastLandStats.total}块 | 可升级:${lastLandStats.upgradeCount} 可解锁:${lastLandStats.unlockCount}`);
+            log('土地', `总${lastLandStats.total}块 | 红:${lastLandStats.red} 黑:${lastLandStats.black} 金:${lastLandStats.gold} | 可升级:${lastLandStats.upgradeCount} 可解锁:${lastLandStats.unlockCount}`);
         }
     }, 5 * 60 * 1000);
 }
