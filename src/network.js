@@ -159,6 +159,8 @@ function handleNotify(msg) {
                 const reason = notify.reason_message || '未知';
                 log('推送', `原因: ${reason}`);
                 sendMiaoNotify(`QQ农场被踢下线: ${reason}`);
+                // 触发断线事件，用于自动重连
+                networkEvents.emit('disconnected', { reason: 'kickout', message: reason });
             } catch (e) { }
             return;
         }
@@ -328,6 +330,8 @@ function sendLogin(onLoginSuccess) {
         if (err) {
             log('登录', `失败: ${err.message}`);
             sendMiaoNotify(`QQ农场登录失败: ${err.message}`);
+            // 触发登录失败事件，用于自动重连
+            networkEvents.emit('disconnected', { reason: 'login_failed', message: err.message });
             return;
         }
         try {
@@ -443,12 +447,16 @@ function connect(code, onLoginSuccess) {
 
     ws.on('close', (code, reason) => {
         console.log(`[WS] 连接关闭 (code=${code})`);
+        // 触发断线事件，用于自动重连
+        networkEvents.emit('disconnected', { reason: 'ws_close', message: `连接关闭 (code=${code})` });
         cleanup();
     });
 
     ws.on('error', (err) => {
         logWarn('WS', `错误: ${err.message}`);
         sendMiaoNotify(`QQ农场连接错误: ${err.message}`);
+        // 触发断线事件，用于自动重连
+        networkEvents.emit('disconnected', { reason: 'ws_error', message: err.message });
     });
 }
 

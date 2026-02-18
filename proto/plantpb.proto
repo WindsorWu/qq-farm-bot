@@ -238,6 +238,26 @@ message PutWeedsReply {
     repeated OperationLimit operation_limits = 2;
 }
 
+// --- 解锁土地 ---
+message UnlockLandRequest {
+    repeated int64 land_ids = 1;
+}
+
+message UnlockLandReply {
+    repeated LandInfo land = 1;
+    repeated OperationLimit operation_limits = 2;
+}
+
+// --- 升级土地 ---
+message UpgradeLandRequest {
+    repeated int64 land_ids = 1;
+}
+
+message UpgradeLandReply {
+    repeated LandInfo land = 1;
+    repeated OperationLimit operation_limits = 2;
+}
+
 // ============ 服务器推送通知 ============
 
 // 土地状态变化通知 (被放虫/放草/偷菜等)

@@ -110,6 +110,62 @@ async function removePlant(landIds) {
     return types.RemovePlantReply.decode(replyBody);
 }
 
+/**
+ * 解锁土地 - 逐块进行，避免批量拒绝
+ * @param {number[]} landIds - 要解锁的土地ID列表
+ * @returns {Promise<{successCount: number, successIds: number[]}>} 成功解锁的土地数量和ID列表
+ */
+async function unlockLand(landIds) {
+    let successCount = 0;
+    const successIds = [];
+    
+    for (const landId of landIds) {
+        try {
+            const body = types.UnlockLandRequest.encode(types.UnlockLandRequest.create({
+                land_ids: [toLong(landId)],
+            })).finish();
+            const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UnlockLand', body);
+            types.UnlockLandReply.decode(replyBody);
+            successCount++;
+            successIds.push(landId);
+            log('解锁', `✓ 土地#${landId} 已解锁`);
+        } catch (e) {
+            logWarn('解锁', `土地#${landId} 失败: ${e.message}`);
+        }
+        if (landIds.length > 1) await sleep(200);  // 200ms 间隔
+    }
+    
+    return { successCount, successIds };
+}
+
+/**
+ * 升级土地 - 逐块进行，避免批量拒绝
+ * @param {number[]} landIds - 要升级的土地ID列表
+ * @returns {Promise<{successCount: number, successIds: number[]}>} 成功升级的土地数量和ID列表
+ */
+async function upgradeLand(landIds) {
+    let successCount = 0;
+    const successIds = [];
+    
+    for (const landId of landIds) {
+        try {
+            const body = types.UpgradeLandRequest.encode(types.UpgradeLandRequest.create({
+                land_ids: [toLong(landId)],
+            })).finish();
+            const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UpgradeLand', body);
+            types.UpgradeLandReply.decode(replyBody);
+            successCount++;
+            successIds.push(landId);
+            log('升级', `✓ 土地#${landId} 已升级`);
+        } catch (e) {
+            logWarn('升级', `土地#${landId} 失败: ${e.message}`);
+        }
+        if (landIds.length > 1) await sleep(200);  // 200ms 间隔
+    }
+    
+    return { successCount, successIds };
+}
+
 // ============ 商店 API ============
 
 async function getShopInfo(shopId) {
@@ -377,6 +433,8 @@ function analyzeLands(lands) {
         harvestable: [], needWater: [], needWeed: [], needBug: [],
         growing: [], empty: [], dead: [],
         harvestableInfo: [],  // 收获植物的详细信息 { id, name, exp }
+        eligibleForUnlock: [],  // 可以解锁的土地
+        eligibleForUpgrade: [], // 可以升级的土地
     };
 
     const nowSec = getServerTimeSec();
@@ -392,6 +450,19 @@ function analyzeLands(lands) {
 
     for (const land of lands) {
         const id = toNum(land.id);
+        
+        // 检查是否可以解锁
+        if (land.could_unlock && !land.unlocked) {
+            result.eligibleForUnlock.push(id);
+            if (debug) console.log(`  土地#${id}: 未解锁但可解锁`);
+        }
+        
+        // 检查是否可以升级 (已解锁的土地)
+        if (land.could_upgrade && land.unlocked) {
+            result.eligibleForUpgrade.push(id);
+            if (debug) console.log(`  土地#${id}: 可升级`);
+        }
+        
         if (!land.unlocked) {
             if (debug) console.log(`  土地#${id}: 未解锁`);
             continue;
@@ -554,6 +625,30 @@ async function checkFarm() {
                 await autoPlantEmptyLands(allDeadLands, allEmptyLands, unlockedLandCount);
                 actions.push(`种植${allDeadLands.length + allEmptyLands.length}`);
             } catch (e) { logWarn('种植', e.message); }
+        }
+
+        // 解锁土地（如果配置开启）
+        if (CONFIG.autoExpandLand && status.eligibleForUnlock.length > 0) {
+            try {
+                const { successCount, successIds } = await unlockLand(status.eligibleForUnlock);
+                if (successCount > 0) {
+                    actions.push(`解锁${successCount}`);
+                    // 添加明确的提醒日志，便于操作员注意
+                    log('农场', `🎉 已自动解锁 ${successCount} 块土地: [${successIds.join(', ')}]`);
+                }
+            } catch (e) { logWarn('解锁', e.message); }
+        }
+
+        // 升级土地（如果配置开启）
+        if (CONFIG.autoUpgradeRedLand && status.eligibleForUpgrade.length > 0) {
+            try {
+                const { successCount, successIds } = await upgradeLand(status.eligibleForUpgrade);
+                if (successCount > 0) {
+                    actions.push(`升级${successCount}`);
+                    // 添加明确的提醒日志，便于操作员注意
+                    log('农场', `⬆️ 已自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
+                }
+            } catch (e) { logWarn('升级', e.message); }
         }
 
         // 输出一行日志

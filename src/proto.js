@@ -58,6 +58,10 @@ async function loadProto() {
     types.PutWeedsReply = root.lookupType('gamepb.plantpb.PutWeedsReply');
     types.FertilizeRequest = root.lookupType('gamepb.plantpb.FertilizeRequest');
     types.FertilizeReply = root.lookupType('gamepb.plantpb.FertilizeReply');
+    types.UnlockLandRequest = root.lookupType('gamepb.plantpb.UnlockLandRequest');
+    types.UnlockLandReply = root.lookupType('gamepb.plantpb.UnlockLandReply');
+    types.UpgradeLandRequest = root.lookupType('gamepb.plantpb.UpgradeLandRequest');
+    types.UpgradeLandReply = root.lookupType('gamepb.plantpb.UpgradeLandReply');
 
     // 背包/仓库
     types.BagRequest = root.lookupType('gamepb.itempb.BagRequest');
