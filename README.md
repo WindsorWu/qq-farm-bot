@@ -94,6 +94,12 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | `AUTO_EXPAND_LAND` | 自动解锁土地 | true |
 | `AUTO_UPGRADE_RED_LAND` | 自动升级红土地 | true |
 
+**注意**：`AUTO_EXPAND_LAND` 和 `AUTO_UPGRADE_RED_LAND` 默认启用。如需禁用，请显式设置为 `false`：
+```bash
+AUTO_EXPAND_LAND=false
+AUTO_UPGRADE_RED_LAND=false
+```
+
 ### 邀请码功能（微信环境）
 
 在项目根目录创建 `share.txt` 文件，每行一个邀请链接：
@@ -238,6 +244,7 @@ const CONFIG = {
     forceLowestLevelCrop: false, // true: 固定最低等级作物（白萝卜优先），跳过经验效率分析
     
     // 土地扩展配置：通过环境变量控制
+    // 注：默认启用，只有显式设置为字符串 'false' 时才会禁用
     autoExpandLand: process.env.AUTO_EXPAND_LAND !== 'false',          // 自动解锁土地 (默认启用)
     autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND !== 'false', // 自动升级红土地 (默认启用)
 };
