@@ -499,7 +499,7 @@ function analyzeLands(lands) {
         const plant = land.plant;
         const isEmpty = !plant || !plant.phases || plant.phases.length === 0;
         
-        // 检查是否可以升级 (已解锁的土地，无论是否有作物)
+        // 检查是否可以升级 (已解锁的土地)
         if (land.could_upgrade && land.unlocked) {
             result.eligibleForUpgrade.push(id);
             if (debug) console.log(`  土地#${id}: 可升级`);
@@ -793,46 +793,8 @@ function stopFarmCheckLoop() {
     networkEvents.removeListener('landsChanged', onLandsChangedPush);
 }
 
-/**
- * 登录后立即执行一次土地解锁/升级
- * 在每次成功登录后调用，确保符合条件的土地立即得到处理
- */
-async function expandLandsOnLogin() {
-    try {
-        const landsReply = await getAllLands();
-        if (!landsReply.lands || landsReply.lands.length === 0) return;
-
-        const status = analyzeLands(landsReply.lands);
-
-        // 登录时清除冷却记录，确保每次登录都立即尝试解锁/升级
-        upgradeRetryCooldown.clear();
-        unlockRetryCooldown.clear();
-
-        if (CONFIG.autoExpandLand && status.eligibleForUnlock.length > 0) {
-            const { successCount, successIds } = await unlockLand(status.eligibleForUnlock);
-            if (successCount > 0) {
-                log('农场', `🎉 登录后自动解锁 ${successCount} 块土地: [${successIds.join(', ')}]`);
-            } else {
-                logWarn('农场', `登录后解锁土地失败: ${status.eligibleForUnlock.length} 块土地均未成功解锁`);
-            }
-        }
-
-        if (CONFIG.autoUpgradeRedLand && status.eligibleForUpgrade.length > 0) {
-            const { successCount, successIds } = await upgradeLand(status.eligibleForUpgrade);
-            if (successCount > 0) {
-                log('农场', `⬆️ 登录后自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
-            } else {
-                logWarn('农场', `登录后升级土地失败: ${status.eligibleForUpgrade.length} 块土地均未成功升级`);
-            }
-        }
-    } catch (e) {
-        logWarn('农场', `登录后扩展检查失败: ${e.message}`);
-    }
-}
-
 module.exports = {
     checkFarm, startFarmCheckLoop, stopFarmCheckLoop,
-    expandLandsOnLogin,
     getCurrentPhase,
     setOperationLimitsCallback,
 };
