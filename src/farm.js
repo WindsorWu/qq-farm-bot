@@ -661,6 +661,8 @@ async function checkFarm() {
                     actions.push(`解锁${successCount}`);
                     // 添加明确的提醒日志，便于操作员注意
                     log('农场', `🎉 已自动解锁 ${successCount} 块土地: [${successIds.join(', ')}]`);
+                } else {
+                    logWarn('农场', `解锁土地失败: ${status.eligibleForUnlock.length} 块土地均未成功解锁`);
                 }
             } catch (e) { logWarn('解锁', e.message); }
         }
@@ -674,6 +676,8 @@ async function checkFarm() {
                     actions.push(`升级${successCount}`);
                     // 添加明确的提醒日志，便于操作员注意
                     log('农场', `⬆️ 已自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
+                } else {
+                    logWarn('农场', `升级土地失败: ${status.eligibleForUpgrade.length} 块土地均未成功升级`);
                 }
                 failedUpgradeIds = failedIds;
             } catch (e) { logWarn('升级', e.message); }
@@ -774,6 +778,8 @@ async function expandLandsOnLogin() {
             const { successCount, successIds } = await unlockLand(status.eligibleForUnlock);
             if (successCount > 0) {
                 log('农场', `🎉 登录后自动解锁 ${successCount} 块土地: [${successIds.join(', ')}]`);
+            } else {
+                logWarn('农场', `登录后解锁土地失败: ${status.eligibleForUnlock.length} 块土地均未成功解锁`);
             }
         }
 
@@ -781,6 +787,8 @@ async function expandLandsOnLogin() {
             const { successCount, successIds } = await upgradeLand(status.eligibleForUpgrade);
             if (successCount > 0) {
                 log('农场', `⬆️ 登录后自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
+            } else {
+                logWarn('农场', `登录后升级土地失败: ${status.eligibleForUpgrade.length} 块土地均未成功升级`);
             }
         }
     } catch (e) {
