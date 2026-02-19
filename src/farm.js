@@ -16,6 +16,7 @@ let farmCheckTimer = null;
 let farmLoopRunning = false;
 let landStatsTimer = null;
 let lastLandStats = null;
+let lastAllLandsReply = null; // 保存最近的 AllLands 响应，用于调试
 
 const EXPAND_RETRY_INTERVAL_MS = 10 * 60 * 1000; // 10分钟重试间隔
 const upgradeRetryCooldown = new Map(); // landId -> lastFailedMs
@@ -37,6 +38,8 @@ async function getAllLands() {
     if (reply.operation_limits && onOperationLimitsUpdate) {
         onOperationLimitsUpdate(reply.operation_limits);
     }
+    // 保存最近的响应用于调试
+    lastAllLandsReply = reply;
     return reply;
 }
 
@@ -157,16 +160,36 @@ async function upgradeLand(landIds) {
     
     for (const landId of landIds) {
         try {
-            const body = types.UpgradeLandRequest.encode(types.UpgradeLandRequest.create({
-                land_ids: [toLong(landId)],
-            })).finish();
+            // 构建并编码请求
+            const reqObj = { land_ids: [toLong(landId)] };
+            const reqMsg = types.UpgradeLandRequest.create(reqObj);
+            const body = types.UpgradeLandRequest.encode(reqMsg).finish();
+            
+            // 调试：打印请求信息
+            console.log(`[DEBUG] 发送 UpgradeLandRequest: land_ids=${JSON.stringify([landId])} bytes=${body.length}`);
+            
             const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UpgradeLand', body);
-            types.UpgradeLandReply.decode(replyBody);
+            const reply = types.UpgradeLandReply.decode(replyBody);
+            console.log('[DEBUG] UpgradeLandReply:', reply);
+            
             successCount++;
             successIds.push(landId);
             log('升级', `✓ 土地#${landId} 已升级`);
         } catch (e) {
-            logWarn('升级', `土地#${landId} 失败: ${e.message}`);
+            // 记录详细的错误信息以便排查
+            try {
+                console.error(`[DEBUG] 升级失败 土地#${landId} 错误详情:`, e && (e.stack || e));
+            } catch (er) {}
+            
+            // 如果可用，打印最近一次的 AllLandsReply 中该地块信息
+            try {
+                if (typeof lastAllLandsReply !== 'undefined' && lastAllLandsReply && Array.isArray(lastAllLandsReply.lands)) {
+                    const found = lastAllLandsReply.lands.find(l => Number(l.id) === Number(landId));
+                    console.log('[DEBUG] 最近 AllLandsReply 中的该地块信息:', JSON.stringify(found, null, 2));
+                }
+            } catch (ignore) {}
+            
+            logWarn('升级', `土地#${landId} 失败: ${e && e.message ? e.message : String(e)}`);
             failedIds.push(landId);
         }
         if (landIds.length > 1) await sleep(200);  // 200ms 间隔
