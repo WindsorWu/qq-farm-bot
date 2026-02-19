@@ -49,7 +49,7 @@ if (!process.argv.includes('--code')) {
 const { CONFIG } = require('./src/config');
 const { loadProto } = require('./src/proto');
 const { connect, cleanup, getWs, networkEvents } = require('./src/network');
-const { startFarmCheckLoop, stopFarmCheckLoop } = require('./src/farm');
+const { startFarmCheckLoop, stopFarmCheckLoop, expandLandsOnLogin } = require('./src/farm');
 const { startFriendCheckLoop, stopFriendCheckLoop } = require('./src/friend');
 const { initTaskSystem, cleanupTaskSystem } = require('./src/task');
 const { initStatusBar, cleanupStatusBar, setStatusPlatform } = require('./src/status');
@@ -141,7 +141,7 @@ function parseArgs(args) {
 // ============ 主函数 ============
 let isReconnecting = false;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
+const MAX_RECONNECT_ATTEMPTS = 1;
 const RECONNECT_DELAY_MS = 5000; // 5秒后重连
 let progressInterval = null; // 等级经验进度定时器（需在断线时清除）
 
@@ -184,6 +184,9 @@ async function startBot(initialOptions) {
         
         // 处理邀请码 (仅微信环境)，在登录框关闭（土地统计打印）后执行
         networkEvents.once('loginBoxComplete', () => { processInviteCodes().catch(() => {}); });
+
+        // 登录后立即执行一次土地解锁/升级
+        await expandLandsOnLogin();
 
         startFarmCheckLoop();
         startFriendCheckLoop();
