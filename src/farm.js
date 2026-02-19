@@ -794,7 +794,7 @@ function stopFarmCheckLoop() {
 }
 
 /**
- * 登录后立即执行一次土地解锁/升级
+ * 登录后立即执行一次土地解锁
  * 在每次成功登录后调用，确保符合条件的土地立即得到处理
  */
 async function expandLandsOnLogin() {
@@ -804,8 +804,7 @@ async function expandLandsOnLogin() {
 
         const status = analyzeLands(landsReply.lands);
 
-        // 登录时清除冷却记录，确保每次登录都立即尝试解锁/升级
-        upgradeRetryCooldown.clear();
+        // 登录时清除解锁冷却记录，确保每次登录都立即尝试解锁
         unlockRetryCooldown.clear();
 
         if (CONFIG.autoExpandLand && status.eligibleForUnlock.length > 0) {
@@ -817,14 +816,6 @@ async function expandLandsOnLogin() {
             }
         }
 
-        if (CONFIG.autoUpgradeRedLand && status.eligibleForUpgrade.length > 0) {
-            const { successCount, successIds } = await upgradeLand(status.eligibleForUpgrade);
-            if (successCount > 0) {
-                log('农场', `⬆️ 登录后自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
-            } else {
-                logWarn('农场', `登录后升级土地失败: ${status.eligibleForUpgrade.length} 块土地均未成功升级`);
-            }
-        }
     } catch (e) {
         logWarn('农场', `登录后扩展检查失败: ${e.message}`);
     }
