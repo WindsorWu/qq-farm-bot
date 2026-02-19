@@ -179,15 +179,19 @@ async function upgradeLand(landIds) {
             // 记录详细的错误信息以便排查
             try {
                 console.error(`[DEBUG] 升级失败 土地#${landId} 错误详情:`, e && (e.stack || e));
-            } catch (er) {}
+            } catch (logErr) {
+                // 忽略调试日志本身的错误，避免影响主流程
+            }
             
             // 如果可用，打印最近一次的 AllLandsReply 中该地块信息
             try {
-                if (typeof lastAllLandsReply !== 'undefined' && lastAllLandsReply && Array.isArray(lastAllLandsReply.lands)) {
+                if (lastAllLandsReply && Array.isArray(lastAllLandsReply.lands)) {
                     const found = lastAllLandsReply.lands.find(l => Number(l.id) === Number(landId));
                     console.log('[DEBUG] 最近 AllLandsReply 中的该地块信息:', JSON.stringify(found, null, 2));
                 }
-            } catch (ignore) {}
+            } catch (logErr) {
+                // 忽略调试日志本身的错误，避免影响主流程
+            }
             
             logWarn('升级', `土地#${landId} 失败: ${e && e.message ? e.message : String(e)}`);
             failedIds.push(landId);
