@@ -193,7 +193,7 @@ async function upgradeLand(landIds) {
                 // 忽略调试日志本身的错误，避免影响主流程
             }
             
-            logWarn('升级', `土地#${landId} 失败: ${e && e.message ? e.message : String(e)}`);
+            logWarn('升级', `土地#${landId} 失败: ${e && e.message ? e.message : (e && e.toString ? e.toString() : String(e))}`);
             failedIds.push(landId);
         }
         if (landIds.length > 1) await sleep(200);  // 200ms 间隔
