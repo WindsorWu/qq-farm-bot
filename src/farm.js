@@ -582,7 +582,8 @@ async function checkFarm() {
         }
 
         // 铲除 + 种植 + 施肥（需要顺序执行）
-        const allDeadLands = status.dead;
+        // 枯死土地和刚收获的土地都需要重新种植
+        const allDeadLands = [...status.dead, ...harvestedLandIds];
         const allEmptyLands = status.empty;
         if (allDeadLands.length > 0 || allEmptyLands.length > 0) {
             try {
