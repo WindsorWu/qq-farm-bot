@@ -14,8 +14,6 @@
 - **自动除虫** — 检测并消灭害虫
 - **自动浇水** — 检测缺水作物并浇水
 - **自动出售** — 每分钟自动出售仓库中的果实
-- **自动解锁土地** — 自动解锁可解锁的土地（需配置开启）
-- **自动升级土地** — 自动升级可升级的红土地（需配置开启）
 
 ### 好友农场
 - **好友巡查** — 自动巡查好友农场
@@ -92,14 +90,6 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | `HEROKU_EXTRA_ARGS` | 代替额外参数（`--interval 1 --friend-interval 30`） | — |
 | `ENABLE_STEAL` | 偷菜 | true |
 | `MIAO_ID` | 喵通知ID | — |
-| `AUTO_EXPAND_LAND` | 自动解锁土地 | true |
-| `AUTO_UPGRADE_RED_LAND` | 自动升级红土地 | true |
-
-**注意**：`AUTO_EXPAND_LAND` 和 `AUTO_UPGRADE_RED_LAND` 默认启用。如需禁用，请显式设置为 `false`：
-```bash
-AUTO_EXPAND_LAND=false
-AUTO_UPGRADE_RED_LAND=false
-```
 
 ### 邀请码功能（微信环境）
 
@@ -243,11 +233,6 @@ const CONFIG = {
     farmCheckInterval: 1000,     // 农场巡查完成后等待间隔
     friendCheckInterval: 10000,  // 好友巡查完成后等待间隔
     forceLowestLevelCrop: false, // true: 固定最低等级作物（白萝卜优先），跳过经验效率分析
-    
-    // 土地扩展配置：通过环境变量控制
-    // 注：默认启用，只有显式设置为字符串 'false' 时才会禁用
-    autoExpandLand: process.env.AUTO_EXPAND_LAND !== 'false',          // 自动解锁土地 (默认启用)
-    autoUpgradeRedLand: process.env.AUTO_UPGRADE_RED_LAND !== 'false', // 自动升级红土地 (默认启用)
 };
 ```
 

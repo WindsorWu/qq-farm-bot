@@ -17,10 +17,6 @@ let farmLoopRunning = false;
 let landStatsTimer = null;
 let lastLandStats = null;
 
-const EXPAND_RETRY_INTERVAL_MS = 10 * 60 * 1000; // 10分钟重试间隔
-const upgradeRetryCooldown = new Map(); // landId -> lastFailedMs
-const unlockRetryCooldown = new Map(); // landId -> lastFailedMs
-
 // ============ 农场 API ============
 
 // 操作限制更新回调 (由 friend.js 设置)
@@ -113,54 +109,6 @@ async function removePlant(landIds) {
     })).finish();
     const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'RemovePlant', body);
     return types.RemovePlantReply.decode(replyBody);
-}
-
-/**
- * 解锁土地 - 逐块进行，避免批量拒绝
- * @param {number[]} landIds - 要解锁的土地ID列表
- * @returns {Promise<{successCount: number, successIds: number[], failedIds: number[]}>} 解锁结果
- */
-async function unlockLand(landIds) {
-    let successCount = 0;
-    const successIds = [];
-    const failedIds = [];
-    
-    for (const landId of landIds) {
-        try {
-            const body = types.UnlockLandRequest.encode(types.UnlockLandRequest.create({
-                land_ids: [toLong(landId)],
-            })).finish();
-            const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UnlockLand', body);
-            types.UnlockLandReply.decode(replyBody);
-            successCount++;
-            successIds.push(landId);
-            log('解锁', `✓ 土地#${landId} 已解锁`);
-        } catch (e) {
-            logWarn('解锁', `土地#${landId} 失败: ${e.message}`);
-            failedIds.push(landId);
-        }
-        if (landIds.length > 1) await sleep(200);  // 200ms 间隔
-    }
-    
-    return { successCount, successIds, failedIds };
-}
-
-/**
- * 升级土地 - 逐块进行，避免批量拒绝
- * @param {number[]} landIds - 要升级的土地ID列表
- * @returns {Promise<Array>} UpgradeLandReply 数组（每块土地对应一个回复）
- */
-async function upgradeLand(landIds) {
-    let results = [];
-    for (const landId of landIds) {
-        const body = types.UpgradeLandRequest.encode(types.UpgradeLandRequest.create({
-            land_ids: [toLong(landId)],
-        })).finish();
-        const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UpgradeLand', body);
-        results.push(types.UpgradeLandReply.decode(replyBody));
-        await sleep(200);
-    }
-    return results;
 }
 
 // ============ 商店 API ============
@@ -455,8 +403,6 @@ function analyzeLands(lands) {
         harvestable: [], needWater: [], needWeed: [], needBug: [],
         growing: [], empty: [], dead: [],
         harvestableInfo: [],  // 收获植物的详细信息 { id, name, exp }
-        eligibleForUnlock: [],  // 可以解锁的土地
-        eligibleForUpgrade: [], // 可以升级的土地
     };
 
     const nowSec = getServerTimeSec();
@@ -473,12 +419,6 @@ function analyzeLands(lands) {
     for (const land of lands) {
         const id = toNum(land.id);
         
-        // 检查是否可以解锁
-        if (land.could_unlock && !land.unlocked) {
-            result.eligibleForUnlock.push(id);
-            if (debug) console.log(`  土地#${id}: 未解锁但可解锁`);
-        }
-        
         if (!land.unlocked) {
             if (debug) console.log(`  土地#${id}: 未解锁`);
             continue;
@@ -486,12 +426,6 @@ function analyzeLands(lands) {
 
         const plant = land.plant;
         const isEmpty = !plant || !plant.phases || plant.phases.length === 0;
-        
-        // 检查是否可以升级 (已解锁且空闲的土地)
-        if (land.could_upgrade && land.unlocked && isEmpty) {
-            result.eligibleForUpgrade.push(id);
-            if (debug) console.log(`  土地#${id}: 可升级`);
-        }
         
         if (isEmpty) {
             result.empty.push(id);
@@ -644,70 +578,12 @@ async function checkFarm() {
                 await harvest(status.harvestable);
                 actions.push(`收获${status.harvestable.length}`);
                 harvestedLandIds = [...status.harvestable];
-                // 收获后清除升级冷却，让刚收获的空地可立即重试升级
-                for (const id of harvestedLandIds) upgradeRetryCooldown.delete(id);
             } catch (e) { logWarn('收获', e.message); }
         }
 
-        // 解锁土地（如果配置开启）- 收割后、种植前执行
-        if (CONFIG.autoExpandLand && status.eligibleForUnlock.length > 0) {
-            const now = Date.now();
-            const toUnlock = status.eligibleForUnlock.filter(id => {
-                const t = unlockRetryCooldown.get(id);
-                return !t || now - t >= EXPAND_RETRY_INTERVAL_MS;
-            });
-            if (toUnlock.length > 0) {
-                try {
-                    const { successCount, successIds, failedIds } = await unlockLand(toUnlock);
-                    const failedTime = Date.now();
-                    for (const id of failedIds) unlockRetryCooldown.set(id, failedTime);
-                    for (const id of successIds) unlockRetryCooldown.delete(id);
-                    if (successCount > 0) {
-                        actions.push(`解锁${successCount}`);
-                        // 添加明确的提醒日志，便于操作员注意
-                        log('农场', `🎉 已自动解锁 ${successCount} 块土地: [${successIds.join(', ')}]`);
-                    } else {
-                        logWarn('农场', `解锁土地失败: ${toUnlock.length} 块土地均未成功解锁，10分钟后重试`);
-                    }
-                } catch (e) { logWarn('解锁', e.message); }
-            }
-        }
-
-        // 升级土地（如果配置开启）- 收割后、种植前执行
-        let failedUpgradeIds = [];
-        if (CONFIG.autoUpgradeRedLand && status.eligibleForUpgrade.length > 0) {
-            const now = Date.now();
-            const toUpgrade = status.eligibleForUpgrade.filter(id => {
-                const t = upgradeRetryCooldown.get(id);
-                return !t || now - t >= EXPAND_RETRY_INTERVAL_MS;
-            });
-            if (toUpgrade.length > 0) {
-                try {
-                    const replies = await upgradeLand(toUpgrade);
-                    // 所有升级成功
-                    for (const id of toUpgrade) upgradeRetryCooldown.delete(id);
-                    if (toUpgrade.length > 0) {
-                        actions.push(`升级${toUpgrade.length}`);
-                        // 添加明确的提醒日志，便于操作员注意
-                        log('农场', `⬆️ 已自动升级 ${toUpgrade.length} 块土地: [${toUpgrade.join(', ')}]`);
-                    }
-                } catch (e) {
-                    // 升级失败，将所有土地加入冷却
-                    const failedTime = Date.now();
-                    for (const id of toUpgrade) upgradeRetryCooldown.set(id, failedTime);
-                    failedUpgradeIds = toUpgrade;
-                    logWarn('升级', e.message);
-                }
-            }
-        }
-
         // 铲除 + 种植 + 施肥（需要顺序执行）
-        // 排除升级候选土地（含冷却中的土地），等升级完成后再种植
-        const upgradeEligibleSet = new Set(status.eligibleForUpgrade);
-        const failedUpgradeSet = new Set(failedUpgradeIds);
-        // 枯死土地直接加入，autoPlantEmptyLands 会先铲除再补种
-        const allDeadLands = [...status.dead, ...harvestedLandIds.filter(id => !failedUpgradeSet.has(id))];
-        const allEmptyLands = status.empty.filter(id => !upgradeEligibleSet.has(id));
+        const allDeadLands = status.dead;
+        const allEmptyLands = status.empty;
         if (allDeadLands.length > 0 || allEmptyLands.length > 0) {
             try {
                 await autoPlantEmptyLands(allDeadLands, allEmptyLands, unlockedLandCount);
