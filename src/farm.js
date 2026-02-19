@@ -148,7 +148,7 @@ async function unlockLand(landIds) {
 /**
  * 升级土地 - 逐块进行，避免批量拒绝
  * @param {number[]} landIds - 要升级的土地ID列表
- * @returns {Promise<{successCount: number, successIds: number[]}>} 成功升级的土地数量和ID列表
+ * @returns {Promise<Array>} UpgradeLandReply 数组（每块土地对应一个回复）
  */
 async function upgradeLand(landIds) {
     let results = [];
@@ -685,13 +685,11 @@ async function checkFarm() {
                 try {
                     const replies = await upgradeLand(toUpgrade);
                     // 所有升级成功
-                    const successIds = toUpgrade;
-                    const successCount = successIds.length;
-                    for (const id of successIds) upgradeRetryCooldown.delete(id);
-                    if (successCount > 0) {
-                        actions.push(`升级${successCount}`);
+                    for (const id of toUpgrade) upgradeRetryCooldown.delete(id);
+                    if (toUpgrade.length > 0) {
+                        actions.push(`升级${toUpgrade.length}`);
                         // 添加明确的提醒日志，便于操作员注意
-                        log('农场', `⬆️ 已自动升级 ${successCount} 块土地: [${successIds.join(', ')}]`);
+                        log('农场', `⬆️ 已自动升级 ${toUpgrade.length} 块土地: [${toUpgrade.join(', ')}]`);
                     }
                 } catch (e) {
                     // 升级失败，将所有土地加入冷却
