@@ -144,6 +144,8 @@ let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 1;
 const RECONNECT_DELAY_MS = 5000; // 5秒后重连
 let progressInterval = null; // 等级经验进度定时器（需在断线时清除）
+let loginTimeoutAttempts = 0;
+const MAX_LOGIN_TIMEOUT_ATTEMPTS = 3;
 
 async function startBot(initialOptions) {
     const options = { ...initialOptions };
@@ -181,6 +183,7 @@ async function startBot(initialOptions) {
     connect(options.code, async () => {
         // 重置重连计数（登录成功说明一切正常）
         reconnectAttempts = 0;
+        loginTimeoutAttempts = 0;
         
         // 处理邀请码 (仅微信环境)，在登录框关闭（土地统计打印）后执行
         networkEvents.once('loginBoxComplete', () => { processInviteCodes().catch(() => {}); });
@@ -241,6 +244,15 @@ async function handleDisconnect(event) {
     
     // 仅 QQ 平台支持自动重连扫码登录
     if (CONFIG.platform === 'qq') {
+        if (event.reason === 'login_timeout') {
+            loginTimeoutAttempts++;
+            if (loginTimeoutAttempts >= MAX_LOGIN_TIMEOUT_ATTEMPTS) {
+                console.error(`[断线] 登录超时累计 ${loginTimeoutAttempts} 次，已达上限，退出进程`);
+                cleanupStatusBar();
+                process.exit(1);
+                return;
+            }
+        }
         if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
             reconnectAttempts++;
             console.log(`[重连] 将在 ${RECONNECT_DELAY_MS / 1000} 秒后尝试扫码重新登录 (第 ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} 次)`);
