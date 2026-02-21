@@ -15,6 +15,9 @@ const CONFIG = {
     
     // Heroku Config Vars 配置：读取 ENABLE_STEAL，如果不设置或设置为 'true' 则开启，设置为 'false' 则关闭
     enableSteal: process.env.ENABLE_STEAL !== 'false',
+
+    // 土地自动升级开关：设置为 'true' 才开启，默认关闭
+    autoUpgradeLand: process.env.AUTO_UPGRADE_LAND === 'true',
     
     // 喵提醒推送配置：从环境变量读取 MIAO_ID，用于连接失败或code失效时推送通知
     miaoId: process.env.MIAO_ID, 

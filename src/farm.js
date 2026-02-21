@@ -103,6 +103,32 @@ async function fertilize(landIds, fertilizerId = NORMAL_FERTILIZER_ID) {
     return successCount;
 }
 
+/**
+ * 土地升级 - 逐块发送，间隔 200ms，每块独立捕获错误
+ */
+async function upgradeLand(landIds) {
+    let successCount = 0;
+    for (let i = 0; i < landIds.length; i++) {
+        const landId = landIds[i];
+        try {
+            const body = types.UpgradeLandRequest.encode(types.UpgradeLandRequest.create({
+                land_ids: [toLong(landId)],
+            })).finish();
+            const { body: replyBody } = await sendMsgAsync('gamepb.plantpb.PlantService', 'UpgradeLand', body);
+            const reply = types.UpgradeLandReply.decode(replyBody);
+            const newLevelStr = reply.land && reply.land.length > 0
+                ? `新等级: ${toNum(reply.land[0].level)}`
+                : '(等级未知)';
+            log('升级', `土地#${landId} 升级成功，${newLevelStr}`);
+            successCount++;
+        } catch (e) {
+            logWarn('升级', `土地#${landId} 升级失败: ${e.message}`);
+        }
+        if (i < landIds.length - 1) await sleep(200);  // 200ms 间隔，最后一块不等待
+    }
+    return successCount;
+}
+
 async function removePlant(landIds) {
     const body = types.RemovePlantRequest.encode(types.RemovePlantRequest.create({
         land_ids: landIds.map(id => toLong(id)),
@@ -592,6 +618,17 @@ async function checkFarm() {
             } catch (e) { logWarn('种植', e.message); }
         }
 
+        // 土地升级（按配置开关控制，默认关闭）
+        if (CONFIG.autoUpgradeLand) {
+            const upgradableIds = lands
+                .filter(land => land.could_upgrade && land.unlocked)
+                .map(land => toNum(land.id));
+            if (upgradableIds.length > 0) {
+                const upgraded = await upgradeLand(upgradableIds);
+                if (upgraded > 0) actions.push(`升级${upgraded}`);
+            }
+        }
+
         // 输出一行日志
         const actionStr = actions.length > 0 ? ` → ${actions.join('/')}` : '';
         if(hasWork) {
@@ -662,6 +699,7 @@ function stopFarmCheckLoop() {
 
 module.exports = {
     checkFarm, startFarmCheckLoop, stopFarmCheckLoop,
+    upgradeLand,
     getCurrentPhase,
     setOperationLimitsCallback,
 };

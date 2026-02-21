@@ -102,6 +102,20 @@ async function verifyMode() {
         console.log(`[OK] Harvest Request: land_ids=[${req.land_ids.join(',')}] host_gid=${req.host_gid} is_all=${req.is_all}`);
     } catch (e) { console.log(`[FAIL] Harvest Request: ${e.message}`); }
 
+    // UpgradeLand encode/decode round-trip
+    try {
+        const { toLong } = require('./utils');
+        const testLandId = 3;
+        const reqBody = types.UpgradeLandRequest.encode(
+            types.UpgradeLandRequest.create({ land_ids: [toLong(testLandId)] })
+        ).finish();
+        const decoded = types.UpgradeLandRequest.decode(reqBody);
+        const decodedId = Long.isLong(decoded.land_ids[0])
+            ? decoded.land_ids[0].toNumber()
+            : decoded.land_ids[0];
+        console.log(`[OK] UpgradeLandRequest encode/decode: land_id=${decodedId} (expected ${testLandId})`);
+    } catch (e) { console.log(`[FAIL] UpgradeLandRequest: ${e.message}`); }
+
     console.log('\n====== 验证完成 ======\n');
 }
 

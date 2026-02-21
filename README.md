@@ -14,6 +14,7 @@
 - **自动除虫** — 检测并消灭害虫
 - **自动浇水** — 检测缺水作物并浇水
 - **自动出售** — 每分钟自动出售仓库中的果实
+- **自动土地升级** — 可选功能（默认关闭），升级满足条件的土地（通过 `AUTO_UPGRADE_LAND=true` 环境变量开启）
 
 ### 好友农场
 - **好友巡查** — 自动巡查好友农场
@@ -89,6 +90,7 @@ node client.js --code <code> --interval 5 --friend-interval 2
 | `LOGIN_CODE` | 代替--code 小程序登录凭证 | — |
 | `HEROKU_EXTRA_ARGS` | 代替额外参数（`--interval 1 --friend-interval 30`） | — |
 | `ENABLE_STEAL` | 偷菜 | true |
+| `AUTO_UPGRADE_LAND` | 自动升级土地（仅升级 could_upgrade && unlocked 的土地） | false |
 | `MIAO_ID` | 喵通知ID | — |
 
 ### 邀请码功能（微信环境）
