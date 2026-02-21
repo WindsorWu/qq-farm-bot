@@ -141,7 +141,7 @@ function parseArgs(args) {
 // ============ 主函数 ============
 let isReconnecting = false;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
+const MAX_RECONNECT_ATTEMPTS = 1;
 const RECONNECT_LONG_WAIT_MS = parseInt(process.env.RECONNECT_LONG_WAIT_MS) || 60 * 60 * 1000; // 默认1小时
 let progressInterval = null; // 等级经验进度定时器（需在断线时清除）
 let loginTimeoutAttempts = 0;
