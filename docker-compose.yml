@@ -1,14 +1,22 @@
 services:
-  qq-farm-bot-ui:
-    build:
-      context: .
-      dockerfile: core/Dockerfile
-    container_name: qq-farm-bot-ui
+  qq-farm-bot:
+    # 直接拉取线上镜像，实现秒级启动
+    # 【注意】fork后请将下面的 windsorwu 替换为您实际的 DockerHub 用户名
+    image: windsorwu/qq-farm-bot:latest
+    container_name: qq-farm-bot
     restart: unless-stopped
-    environment:
-      ADMIN_PASSWORD: admin
-      TZ: Asia/Shanghai
     ports:
-      - "3000:3000"
+      - "3000:3000" 
     volumes:
-      - ./data:/app/core/data
+      # 持久化数据库，防止容器重建后数据丢失 
+      - ./data:/app/core/data 
+    environment:
+      - PORT=3000 
+      - TZ=Asia/Shanghai
+      # 生产环境请修改为你自己的加密密钥（32字符）
+      - BOT_ENCRYPT_KEY=qq-farm-bot-default-key-32bytes!
+      # 邮件掉线通知 SMTP 配置（如需启用，取消以下注释并填写真实信息）
+      # - MAIL_HOST=smtp.qq.com
+      # - MAIL_PORT=587
+      # - MAIL_USER=your-email@qq.com
+      # - MAIL_PASS=your-smtp-auth-code
