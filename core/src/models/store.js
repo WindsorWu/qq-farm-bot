@@ -122,6 +122,7 @@ const globalConfig = {
     qrLogin: { ...DEFAULT_QR_LOGIN },
     runtimeClient: { ...DEFAULT_RUNTIME_CLIENT, device_info: { ...DEFAULT_RUNTIME_CLIENT.device_info } },
     adminPasswordHash: '',
+    disablePasswordAuth: false,
 };
 
 function normalizeOfflineReminder(input) {
@@ -571,6 +572,9 @@ function loadGlobalConfig() {
             if (typeof data.adminPasswordHash === 'string') {
                 globalConfig.adminPasswordHash = data.adminPasswordHash;
             }
+            if (typeof data.disablePasswordAuth === 'boolean') {
+                globalConfig.disablePasswordAuth = data.disablePasswordAuth;
+            }
         }
     } catch (e) {
         console.error('加载配置失败:', e.message);
@@ -628,6 +632,16 @@ function setAdminPasswordHash(hash) {
     globalConfig.adminPasswordHash = String(hash || '');
     saveGlobalConfig();
     return globalConfig.adminPasswordHash;
+}
+
+function getDisablePasswordAuth() {
+    return Boolean(globalConfig.disablePasswordAuth);
+}
+
+function setDisablePasswordAuth(disabled) {
+    globalConfig.disablePasswordAuth = Boolean(disabled);
+    saveGlobalConfig();
+    return globalConfig.disablePasswordAuth;
 }
 
 // 初始化加载
@@ -963,4 +977,6 @@ module.exports = {
     deleteAccount,
     getAdminPasswordHash,
     setAdminPasswordHash,
+    getDisablePasswordAuth,
+    setDisablePasswordAuth,
 };
