@@ -3,8 +3,8 @@ name: Build And Push Docker Image
 on:
   workflow_dispatch:
   push:
-    # 仅在推送 v 开头的 tag 时触发构建 (如 v2.0.0)
-    tags:
+    branches: [ main ]  # 仅向main分支推送时触发（含合并分支/PR合并）
+    tags: []  # 清空tag触发（彻底禁用tag触发）
 
 jobs:
   build:
@@ -22,6 +22,12 @@ jobs:
           timezoneMacos: "Asia/Shanghai"
           timezoneWindows: "China Standard Time"
 
+      - name: Generate version tag (date + time)
+        id: gen_version
+        run: |
+          VERSION=$(date +"%Y%m%d-%H%M")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
       - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
@@ -36,13 +42,6 @@ jobs:
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/qq-farm-bot
           tags: |
             type=raw,value=${{ steps.gen_version.outputs.version }}
-            type=schedule,pattern=nightly
-            type=edge
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
             type=raw,value=latest
 
       - name: Set up QEMU
