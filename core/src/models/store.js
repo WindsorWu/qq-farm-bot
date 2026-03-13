@@ -954,11 +954,19 @@ function addOrUpdateAccount(acc) {
     } else {
         const id = data.nextId++;
         touchedAccountId = String(id);
+        const defaultName = String(
+            acc.name
+            || acc.nick
+            || (acc.gid ? `GID:${acc.gid}` : '')
+            || '',
+        ).trim() || `账号${id}`;
         data.accounts.push({
             id: touchedAccountId,
-            name: acc.name || `账号${id}`,
+            name: defaultName,
             code: acc.code || '',
             platform: acc.platform || 'qq',
+            gid: acc.gid ? String(acc.gid) : '',
+            openId: acc.openId ? String(acc.openId) : '',
             uin: acc.uin ? String(acc.uin) : '',
             qq: acc.qq ? String(acc.qq) : (acc.uin ? String(acc.uin) : ''),
             avatar: acc.avatar || acc.avatarUrl || '',

@@ -883,7 +883,8 @@ async function fetchPasswordAuthStatus() {
     if (data && data.ok) {
       passwordAuthDisabled.value = data.data.disabled
     }
-  } catch (e) {
+  }
+  catch (e) {
     console.error('获取密码认证状态失败:', e)
   }
 }
@@ -899,12 +900,15 @@ async function handleTogglePasswordAuth() {
     if (data && data.ok) {
       passwordAuthDisabled.value = data.data.disabled
       showAlert(passwordAuthDisabled.value ? '已禁用密码认证' : '已启用密码认证')
-    } else {
+    }
+    else {
       showAlert(`操作失败: ${data?.error || '未知错误'}`, 'danger')
     }
-  } catch (e: any) {
+  }
+  catch (e: any) {
     showAlert(`操作失败: ${e?.response?.data?.error || e?.message || '未知错误'}`, 'danger')
-  } finally {
+  }
+  finally {
     passwordAuthLoading.value = false
   }
 }
@@ -1485,9 +1489,9 @@ async function handleTestOffline() {
 
           <!-- 取消密码访问功能 -->
           <div class="mt-4 border-t pt-4 dark:border-gray-700">
-            <div class="flex items-center justify-between mb-3">
+            <div class="mb-3 flex items-center justify-between">
               <div>
-                <h4 class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                <h4 class="text-sm text-gray-900 font-medium dark:text-gray-100">
                   取消密码访问
                 </h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -1500,7 +1504,7 @@ async function handleTestOffline() {
                 @update:model-value="handleTogglePasswordAuth"
               />
             </div>
-            
+
             <div v-if="passwordAuthDisabled" class="mt-2 rounded bg-orange-50 p-2 text-xs text-orange-700 dark:bg-orange-900/20 dark:text-orange-300">
               <div class="flex items-center gap-1">
                 <div class="i-carbon-warning-alt" />

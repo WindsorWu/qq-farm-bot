@@ -11,30 +11,31 @@ const adminToken = useStorage('admin_token', '')
 
 async function ensureTokenValid() {
   const token = String(adminToken.value || '').trim()
-  
+
   // 首先检查是否禁用了密码认证
   try {
     const authCheckResponse = await axios.get('/api/auth/validate', {
       headers: token ? { 'x-admin-token': token } : {},
       timeout: 6000,
     })
-    
+
     if (authCheckResponse.data && authCheckResponse.data.ok) {
       const { valid, passwordDisabled } = authCheckResponse.data.data
-      
+
       // 如果禁用了密码认证，直接返回true
       if (passwordDisabled) {
         return true
       }
-      
+
       // 如果启用了密码认证，检查token有效性
       if (valid && token) {
         return true
       }
     }
-    
+
     return false
-  } catch (error) {
+  }
+  catch {
     return false
   }
 }
@@ -64,7 +65,7 @@ router.beforeEach(async (to, _from) => {
 
   // 首先检查是否禁用了密码认证
   const authValid = await ensureTokenValid()
-  
+
   if (to.name === 'login') {
     // 如果已经通过认证（包括禁用密码认证的情况），跳转到首页
     if (authValid) {
