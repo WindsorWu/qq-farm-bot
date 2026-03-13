@@ -35,6 +35,7 @@ jobs:
           images: |
             docker.io/${{ secrets.DOCKERHUB_USERNAME }}/qq-farm-bot
           tags: |
+            type=raw,value=${{ steps.gen_version.outputs.version }}
             type=schedule,pattern=nightly
             type=edge
             type=ref,event=branch
