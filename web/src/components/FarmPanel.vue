@@ -445,26 +445,26 @@ onUnmounted(() => {
 
     <div
       v-if="contextMenuVisible"
-      class="fixed z-[70] min-w-35 rounded-lg border border-gray-200 bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
+      class="fixed z-[70] min-w-35 border border-gray-200 rounded-lg bg-white p-1 shadow-lg dark:border-gray-700 dark:bg-gray-800"
       :style="contextMenuStyle"
       @click.stop
     >
       <button
-        class="w-full rounded px-3 py-2 text-left text-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
+        class="w-full rounded px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-gray-700"
         :disabled="singleOperating"
         @click="handleLandAction('remove')"
       >
         铲除
       </button>
       <button
-        class="w-full rounded px-3 py-2 text-left text-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
+        class="w-full rounded px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-gray-700"
         :disabled="singleOperating"
         @click="handleLandAction('plant')"
       >
         种植
       </button>
       <button
-        class="w-full rounded px-3 py-2 text-left text-sm transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-700"
+        class="w-full rounded px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed hover:bg-gray-100 disabled:opacity-50 dark:hover:bg-gray-700"
         :disabled="singleOperating"
         @click="handleLandAction('organic_fertilize')"
       >
@@ -477,7 +477,7 @@ onUnmounted(() => {
       class="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       @click="closeSeedDialog"
     >
-      <div class="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-800" @click.stop>
+      <div class="max-h-[80vh] max-w-xl w-full overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-800" @click.stop>
         <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 dark:border-gray-700">
           <h3 class="text-lg font-bold">
             选择种子（地块 #{{ selectedLandId }}）
@@ -497,7 +497,7 @@ onUnmounted(() => {
             <button
               v-for="seed in seeds"
               :key="seed.seedId"
-              class="flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition"
+              class="flex items-center gap-3 border rounded-lg px-3 py-2 text-left transition"
               :class="[
                 Number(seed.plantSize || 1) > 1 || Number(seed.count || 0) <= 0
                   ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-700 dark:bg-gray-700/60 dark:text-gray-500'
@@ -538,7 +538,7 @@ onUnmounted(() => {
             取消
           </button>
           <button
-            class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            class="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white transition disabled:cursor-not-allowed hover:bg-blue-700 disabled:opacity-50"
             :disabled="singleOperating || !canSubmitSeedPlant"
             @click="confirmSeedPlant"
           >

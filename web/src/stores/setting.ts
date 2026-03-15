@@ -49,8 +49,8 @@ export interface IntervalsConfig {
 }
 
 export interface FriendBlockLevelConfig {
-    enabled?: boolean
-    Level?: number
+  enabled?: boolean
+  Level?: number
 }
 
 export interface FriendQuietHoursConfig {
@@ -107,7 +107,7 @@ export interface SettingsState {
   preferredSeedId: number
   bagSeedPriority: number[]
   intervals: IntervalsConfig
-  friendBlockLevel:FriendBlockLevelConfig
+  friendBlockLevel: FriendBlockLevelConfig
   friendQuietHours: FriendQuietHoursConfig
   automation: AutomationConfig
   ui: UIConfig

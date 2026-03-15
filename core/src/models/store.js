@@ -863,7 +863,7 @@ function normalizeIntervals(intervals) {
 
 function normalizeBlockLevel(Level) {
     const num = Number(Level);
-    if (isNaN(num) || num < 1) {
+    if (Number.isNaN(num) || num < 1) {
         return 1;
     }
     return Math.floor(num);
